@@ -1,142 +1,373 @@
-import { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useRef, useEffect, useMemo, useCallback, Fragment } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { gsap } from 'gsap';
 import { Flip } from 'gsap/Flip';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { 
+  XMarkIcon, 
+  FunnelIcon, 
+  MagnifyingGlassIcon,
+  BookOpenIcon,
+  ShareIcon,
+  SparklesIcon,
+  ArrowPathIcon,
+  PlayIcon
+} from '@heroicons/react/24/outline';
+import Tilt from 'react-parallax-tilt';
+import { useMediaQuery } from 'react-responsive';
+import { Dialog, Transition } from '@headlessui/react';
 
 gsap.registerPlugin(Flip);
+
+// Lazy load heavy libraries
+const loadConfetti = () => import('canvas-confetti');
+const loadHtml2Canvas = () => import('html2canvas');
 
 interface Card {
   id: string;
   name: string;
+  suit: '♦' | '♠' | '♥' | '♣';
+  rank: string;
   punchline: string;
   mirrorQuestion: string;
   image: string;
   color: string;
-  height: number;
+  keywords: string[];
+}
+
+interface JournalEntry {
+  id: string;
+  cardId: string;
+  cardName: string;
+  question: string;
+  timestamp: number;
+}
+
+interface ProgressState {
+  openedCards: Set<string>;
+  journalEntries: JournalEntry[];
 }
 
 const demoCards: Card[] = [
   {
     id: '1',
-    name: 'La Reine Visionnaire',
-    punchline: 'Votre intuition guide vos pas vers l\'avenir',
-    mirrorQuestion: 'Quelle vision de votre futur vous inspire le plus ?',
-    image: '👑',
-    color: 'from-imperial-gold to-champagne-pink',
-    height: 280
+    name: '4♦ Solar Manipulator',
+    suit: '♦',
+    rank: '4',
+    punchline: 'Votre charisme commande naturellement le respect et l\'attention de tous',
+    mirrorQuestion: 'Comment votre présence influence-t-elle positivement votre entourage ?',
+    image: '/assets/images/3carrau.png',
+    color: 'from-royal-gold to-royal-champagne',
+    keywords: ['charisme', 'leadership', 'influence', 'respect']
   },
   {
     id: '2',
-    name: 'L\'Impératrice Créative',
-    punchline: 'Vos mains créent la beauté que votre âme ressent',
-    mirrorQuestion: 'Quelle création révèle le mieux votre essence ?',
-    image: '🎨',
-    color: 'from-royal-purple to-aubergine-violet',
-    height: 320
+    name: '7♠ Shadow Architect',
+    suit: '♠',
+    rank: '7',
+    punchline: 'Vous construisez des stratégies dans l\'ombre avec une précision chirurgicale',
+    mirrorQuestion: 'Quelle est votre stratégie la plus brillante et comment l\'avez-vous développée ?',
+    image: '/assets/images/3carrau.png',
+    color: 'from-royal-purple to-cabinet-aubergine',
+    keywords: ['stratégie', 'planification', 'analyse', 'précision']
   },
   {
     id: '3',
-    name: 'La Souveraine Sage',
-    punchline: 'Votre sagesse éclaire le chemin des autres',
-    mirrorQuestion: 'Quelle leçon de vie aimeriez-vous partager ?',
-    image: '🔮',
-    color: 'from-smokedGold to-vintage',
-    height: 260
+    name: 'K♥ Emotional Alchemist',
+    suit: '♥',
+    rank: 'K',
+    punchline: 'Vous transformez la douleur en force et la vulnérabilité en pouvoir authentique',
+    mirrorQuestion: 'Comment transformez-vous vos émotions les plus intenses en sources de force ?',
+    image: '/assets/images/3carrau.png',
+    color: 'from-ritual-smokedGold to-ritual-vintage',
+    keywords: ['émotions', 'transformation', 'résilience', 'authenticité']
   },
   {
     id: '4',
-    name: 'La Majesté Bienveillante',
-    punchline: 'Votre cœur ouvert accueille toutes les âmes',
-    mirrorQuestion: 'Comment votre compassion transforme-t-elle le monde ?',
-    image: '💖',
-    color: 'from-champagne-pink to-powder',
-    height: 340
+    name: 'A♣ Intellectual Dominator',
+    suit: '♣',
+    rank: 'A',
+    punchline: 'Votre esprit analytique déconstruit et maîtrise tous les systèmes complexes',
+    mirrorQuestion: 'Quel système complexe avez-vous le mieux maîtrisé et décomposé ?',
+    image: '/assets/images/3carrau.png',
+    color: 'from-royal-champagne to-cabinet-powder',
+    keywords: ['intellect', 'analyse', 'système', 'maîtrise']
   },
   {
     id: '5',
-    name: 'La Reine Guerrière',
-    punchline: 'Votre force intérieure surmonte tous les défis',
-    mirrorQuestion: 'Quelle bataille intérieure avez-vous gagnée ?',
-    image: '⚔️',
-    color: 'from-indigo to-royal-purple',
-    height: 300
+    name: 'J♦ Charismatic Rebel',
+    suit: '♦',
+    rank: 'J',
+    punchline: 'Vous défiez les conventions avec un style et une audace inégalés',
+    mirrorQuestion: 'Quelle règle ou convention avez-vous brisée avec élégance et succès ?',
+    image: '/assets/images/3carrau.png',
+    color: 'from-ritual-indigo to-royal-purple',
+    keywords: ['rébellion', 'innovation', 'audace', 'originalité']
   },
   {
     id: '6',
-    name: 'L\'Enchanteresse Mystique',
-    punchline: 'Votre magie réside dans votre authenticité',
-    mirrorQuestion: 'Quel est votre pouvoir secret le plus précieux ?',
-    image: '✨',
-    color: 'from-vintage to-smokedGold',
-    height: 290
+    name: 'Q♠ Strategic Phantom',
+    suit: '♠',
+    rank: 'Q',
+    punchline: 'Votre vision à long terme anticipe et influence tous les mouvements',
+    mirrorQuestion: 'Quelle vision d\'avenir guide vos décisions les plus importantes ?',
+    image: '/assets/images/3carrau.png',
+    color: 'from-ritual-vintage to-ritual-smokedGold',
+    keywords: ['vision', 'anticipation', 'stratégie', 'influence']
   },
   {
     id: '7',
-    name: 'La Déesse Lunaire',
-    punchline: 'Vos cycles reflètent la sagesse ancestrale',
-    mirrorQuestion: 'Comment honorez-vous votre féminité sacrée ?',
-    image: '🌙',
-    color: 'from-powder to-champagne-pink',
-    height: 310
+    name: '10♥ Passionate Conqueror',
+    suit: '♥',
+    rank: '10',
+    punchline: 'Votre intensité émotionnelle consume et transforme tout sur son passage',
+    mirrorQuestion: 'Quelle passion brûlante vous consume et vous pousse vers l\'excellence ?',
+    image: '/assets/images/3carrau.png',
+    color: 'from-cabinet-powder to-royal-champagne',
+    keywords: ['passion', 'intensité', 'transformation', 'excellence']
   },
   {
     id: '8',
-    name: 'La Reine Solaire',
-    punchline: 'Votre lumière réchauffe tous les cœurs',
-    mirrorQuestion: 'Comment votre joie illumine-t-elle votre entourage ?',
-    image: '☀️',
-    color: 'from-imperial-gold to-royal-gold',
-    height: 270
+    name: '9♣ Tactical Mastermind',
+    suit: '♣',
+    rank: '9',
+    punchline: 'Vous orchestrez des plans complexes avec une patience et intelligence redoutables',
+    mirrorQuestion: 'Quel plan complexe avez-vous mené à bien grâce à votre patience ?',
+    image: '/assets/images/3carrau.png',
+    color: 'from-royal-gold to-cabinet-patina',
+    keywords: ['tactique', 'patience', 'orchestration', 'intelligence']
   }
 ];
+
+const STORAGE_KEY = 'queendeq-cards-progress';
+const MILESTONES = [10, 25, 54];
 
 const CardsPage = () => {
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSuits, setSelectedSuits] = useState<Set<string>>(new Set());
+  const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set());
+  const [spreadMode, setSpreadMode] = useState(false);
+  const [spreadCards, setSpreadCards] = useState<Card[]>([]);
+  const [isSharing, setIsSharing] = useState(false);
+  const [showToast, setShowToast] = useState<string | null>(null);
+  
+  const [progress, setProgress] = useState<ProgressState>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const data = JSON.parse(saved);
+        return {
+          openedCards: new Set(data.openedCards || []),
+          journalEntries: data.journalEntries || []
+        };
+      }
+    } catch (e) {
+      console.warn('Failed to load progress from localStorage');
+    }
+    return { openedCards: new Set(), journalEntries: [] };
+  });
+
   const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const containerRef = useRef<HTMLDivElement>(null);
+  const modalPanelRef = useRef<HTMLDivElement>(null);
 
-  const handleCardClick = (card: Card) => {
-    if (isAnimating) return;
-    
-    setIsAnimating(true);
-    const cardElement = cardRefs.current[card.id];
-    
-    if (cardElement) {
-      const state = Flip.getState(cardElement);
-      setSelectedCard(card);
-      
-      Flip.from(state, {
-        duration: 0.6,
-        ease: "power2.inOut",
-        scale: true,
-        onComplete: () => setIsAnimating(false)
-      });
+  // Save progress to localStorage
+  const saveProgress = useCallback((newProgress: ProgressState) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        openedCards: Array.from(newProgress.openedCards),
+        journalEntries: newProgress.journalEntries
+      }));
+      setProgress(newProgress);
+    } catch (e) {
+      console.warn('Failed to save progress to localStorage');
     }
+  }, []);
+
+  // Check for reduced motion preference
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      setPrefersReducedMotion(e.matches);
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  // Trigger confetti at milestones
+  const triggerConfetti = useCallback(async (milestone: number) => {
+    if (prefersReducedMotion) return;
+    
+    try {
+      const confetti = (await loadConfetti()).default;
+      confetti({
+        particleCount: milestone === 54 ? 200 : 100,
+        spread: milestone === 54 ? 180 : 70,
+        origin: { y: 0.6 },
+        colors: ['#D6AE60', '#D4B5A5', '#3B1E50', '#B79D74']
+      });
+    } catch (e) {
+      console.warn('Failed to load confetti library');
+    }
+  }, [prefersReducedMotion]);
+
+  // Mark card as opened and check milestones
+  const markCardOpened = useCallback((cardId: string) => {
+    const newOpenedCards = new Set(progress.openedCards);
+    const wasAlreadyOpened = newOpenedCards.has(cardId);
+    
+    if (!wasAlreadyOpened) {
+      newOpenedCards.add(cardId);
+      const newProgress = { ...progress, openedCards: newOpenedCards };
+      saveProgress(newProgress);
+      
+      const count = newOpenedCards.size;
+      const nextMilestone = MILESTONES.find(m => m === count);
+      if (nextMilestone) {
+        setTimeout(() => triggerConfetti(nextMilestone), 500);
+      }
+    }
+  }, [progress, saveProgress, triggerConfetti]);
+
+  // Add entry to journal
+  const handleAddToJournal = useCallback((card: Card) => {
+    const entry: JournalEntry = {
+      id: Date.now().toString(),
+      cardId: card.id,
+      cardName: card.name,
+      question: card.mirrorQuestion,
+      timestamp: Date.now()
+    };
+    
+    const newEntries = [...progress.journalEntries, entry];
+    const newProgress = { ...progress, journalEntries: newEntries };
+    saveProgress(newProgress);
+    
+    setShowToast('Ajouté au journal ! / Added to journal!');
+    setTimeout(() => setShowToast(null), 3000);
+  }, [progress, saveProgress]);
+
+  // Share card as PNG
+  const handleSharePNG = useCallback(async (card: Card) => {
+    if (isSharing) return;
+    
+    const elementToCapture = modalPanelRef.current;
+    if (!elementToCapture) return;
+
+    setIsSharing(true);
+    try {
+      const html2canvas = (await loadHtml2Canvas()).default;
+      const canvas = await html2canvas(elementToCapture, {
+        backgroundColor: null, // Use transparent background
+        scale: 2,
+        useCORS: true
+      });
+      
+      const link = document.createElement('a');
+      link.download = `${card.name.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+      
+      setShowToast('Image partagée ! / Image shared!');
+      setTimeout(() => setShowToast(null), 3000);
+    } catch (e) {
+      console.warn('Failed to generate sharing image', e);
+      setShowToast('Erreur lors du partage / Sharing error');
+      setTimeout(() => setShowToast(null), 3000);
+    } finally {
+      setIsSharing(false);
+    }
+  }, [isSharing]);
+
+  // Get all unique keywords for filter
+  const allKeywords = useMemo(() => {
+    const keywords = new Set<string>();
+    demoCards.forEach(card => {
+      card.keywords.forEach(keyword => keywords.add(keyword));
+    });
+    return Array.from(keywords).sort();
+  }, []);
+
+  // Filter cards based on search, suits, and keywords
+  const filteredCards = useMemo(() => {
+    return demoCards.filter(card => {
+      // Search query filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesName = card.name.toLowerCase().includes(query);
+        const matchesPunchline = card.punchline.toLowerCase().includes(query);
+        const matchesKeywords = card.keywords.some(k => k.toLowerCase().includes(query));
+        
+        if (!matchesName && !matchesPunchline && !matchesKeywords) {
+          return false;
+        }
+      }
+      
+      // Suit filter
+      if (selectedSuits.size > 0 && !selectedSuits.has(card.suit)) {
+        return false;
+      }
+      
+      // Keywords filter
+      if (selectedKeywords.size > 0) {
+        const hasSelectedKeyword = card.keywords.some(k => selectedKeywords.has(k));
+        if (!hasSelectedKeyword) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [searchQuery, selectedSuits, selectedKeywords]);
+
+  // Handle card click
+  const handleCardClick = (card: Card) => {
+    if (isAnimating || spreadMode) return;
+    
+    markCardOpened(card.id);
+    setSelectedCard(card);
   };
 
+  // Handle close card
   const handleCloseCard = () => {
     if (isAnimating) return;
-    
-    setIsAnimating(true);
-    const cardElement = cardRefs.current[selectedCard?.id || ''];
-    
-    if (cardElement) {
-      const state = Flip.getState(cardElement);
-      setSelectedCard(null);
-      
-      Flip.from(state, {
-        duration: 0.6,
-        ease: "power2.inOut",
-        scale: true,
-        onComplete: () => setIsAnimating(false)
-      });
-    }
+    setSelectedCard(null);
   };
 
+  // 3-card spread animation
+  const trigger3CardSpread = () => {
+    if (prefersReducedMotion || isAnimating) return;
+    
+    const randomCards = [...filteredCards]
+      .sort(() => 0.5 - Math.random())
+      .slice(0, 3);
+    
+    setSpreadCards(randomCards);
+    setSpreadMode(true);
+    
+    // Mark spread cards as opened
+    randomCards.forEach(card => markCardOpened(card.id));
+    
+    setTimeout(() => {
+      setSpreadMode(false);
+      setSpreadCards([]);
+    }, 5000);
+  };
+
+  // Progress calculation
+  const progressPercentage = (progress.openedCards.size / demoCards.length) * 100;
+  const nextMilestone = MILESTONES.find(m => m > progress.openedCards.size);
+
+  // Animate cards on mount
   useEffect(() => {
-    // Animate cards on mount
+    if (prefersReducedMotion) return;
+    
     const cards = Object.values(cardRefs.current).filter(Boolean);
     gsap.fromTo(cards, 
       { opacity: 0, y: 50, rotateX: 15 },
@@ -149,120 +380,580 @@ const CardsPage = () => {
         ease: "power2.out"
       }
     );
-  }, []);
-
-  if (selectedCard) {
-    return (
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <motion.div
-          ref={(el) => {
-            if (el) cardRefs.current[selectedCard.id] = el;
-          }}
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-pearl rounded-2xl p-8 max-w-md w-full shadow-royal border border-imperial-gold/20"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <div className="text-4xl">{selectedCard.image}</div>
-            <button
-              onClick={handleCloseCard}
-              className="p-2 hover:bg-royal-purple/10 rounded-full transition-colors"
-            >
-              <XMarkIcon className="w-6 h-6 text-royal-purple" />
-            </button>
-          </div>
-          
-          <h2 className="text-2xl font-playfair font-bold text-royal-purple mb-4">
-            {selectedCard.name}
-          </h2>
-          
-          <p className="text-aubergine-violet font-raleway mb-6 text-lg">
-            {selectedCard.punchline}
-          </p>
-          
-          <div className="bg-gradient-to-r from-imperial-gold/10 to-champagne-pink/10 rounded-lg p-4">
-            <h3 className="font-playfair font-bold text-royal-purple mb-2">
-              Question Miroir
-            </h3>
-            <p className="text-aubergine-violet/80 font-raleway italic">
-              {selectedCard.mirrorQuestion}
-            </p>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
+  }, [prefersReducedMotion, filteredCards]);
 
   return (
     <motion.div
-      ref={containerRef}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
-      className="space-y-8"
+      className="first:pt-0 last:pb-0 relative"
     >
-      {/* Header */}
-      <div className="text-center">
-        <h1 className="text-4xl font-playfair font-bold text-royal-purple mb-4">
-          Collection Royale
-        </h1>
-        <p className="text-aubergine-violet/70 font-raleway text-lg max-w-2xl mx-auto">
-          Découvrez vos archétypes royaux. Chaque carte révèle une facette de votre essence et vous invite à la contemplation.
-        </p>
+      {/* Progress Ring - Top Right */}
+      <div className="fixed top-24 right-6 z-40">
+        <div className="relative w-16 h-16">
+          <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 64 64">
+            <circle
+              cx="32"
+              cy="32"
+              r="28"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="4"
+              className="text-royal-gold/20"
+            />
+            <circle
+              cx="32"
+              cy="32"
+              r="28"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="4"
+              strokeDasharray={`${progressPercentage * 1.75} 175`}
+              className="text-royal-gold transition-all duration-500"
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-royal-purple font-sans font-bold text-sm">
+              {progress.openedCards.size}
+            </span>
+          </div>
+        </div>
+        {nextMilestone && (
+          <div className="text-center mt-2">
+            <span className="text-xs text-cabinet-aubergine font-sans">
+              Next: {nextMilestone}
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* Masonry Grid */}
-      <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 2xl:columns-6 gap-6 space-y-6">
-        {demoCards.map((card) => (
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {showToast && (
           <motion.div
-            key={card.id}
-            ref={(el) => {
-              if (el) cardRefs.current[card.id] = el;
-            }}
-            className="break-inside-avoid mb-6 cursor-pointer group"
-            style={{ height: `${card.height}px` }}
-            whileHover={{ 
-              rotateX: 6,
-              rotateY: 3,
-              scale: 1.02,
-              transition: { duration: 0.3 }
-            }}
-            onClick={() => handleCardClick(card)}
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 bg-royal-purple text-royal-pearl px-6 py-3 rounded-full shadow-royal font-sans"
           >
-            <div className={`h-full bg-gradient-to-br ${card.color} rounded-2xl p-6 shadow-royal border border-imperial-gold/20 hover:shadow-golden transition-all duration-300 group-hover:border-imperial-gold/40`}>
-              <div className="flex flex-col h-full">
-                <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                  {card.image}
+            {showToast}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-12 lg:mb-16">
+        <div>
+          <h1 className="text-4xl lg:text-5xl font-serif font-bold text-royal-purple mb-4">
+            Cards Collection
+        </h1>
+          <p className="text-cabinet-aubergine/70 font-sans text-lg max-w-2xl">
+            Découvrez les archétypes masculins qui reflètent votre essence. 
+            {progress.openedCards.size > 0 && (
+              <span className="ml-2 text-royal-gold font-medium">
+                {progress.openedCards.size}/{demoCards.length} révélées
+              </span>
+            )}
+          </p>
+        </div>
+
+        <div className="flex items-center space-x-4">
+          {/* 3-Card Spread Button */}
+          <button
+            onClick={trigger3CardSpread}
+            disabled={filteredCards.length < 3 || spreadMode}
+            className="flex items-center space-x-2 bg-gradient-to-r from-ritual-smokedGold/20 to-ritual-vintage/20 border border-ritual-smokedGold/30 rounded-lg px-4 py-2 text-cabinet-aubergine font-sans font-medium hover:from-ritual-smokedGold/30 hover:to-ritual-vintage/30 transition-all duration-200 disabled:opacity-50"
+          >
+            <PlayIcon className="w-5 h-5" />
+            <span className="hidden sm:inline">3-Card Spread</span>
+          </button>
+
+          {/* Filters Toggle */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center space-x-2 border rounded-lg px-4 py-2 font-sans font-medium transition-all duration-200 ${
+              showFilters
+                ? 'bg-gradient-to-r from-royal-gold/30 to-royal-champagne/30 border-royal-gold text-royal-purple'
+                : 'bg-gradient-to-r from-royal-gold/20 to-royal-champagne/20 border-royal-gold/30 text-royal-purple hover:from-royal-gold/30 hover:to-royal-champagne/30'
+            }`}
+          >
+            <FunnelIcon className="w-5 h-5" />
+            <span className="hidden sm:inline">Filters</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Filters Panel */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-gradient-to-r from-royal-pearl to-royal-champagne/30 rounded-xl p-6 border border-royal-gold/20 mb-8"
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Search */}
+              <div>
+                <label className="block text-royal-purple font-sans font-medium mb-2">
+                  Search / Recherche
+                </label>
+                <div className="relative">
+                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-cabinet-aubergine/50" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Nom, description, mots-clés..."
+                    className="w-full pl-10 pr-4 py-2 bg-royal-pearl border border-royal-gold/30 rounded-lg text-cabinet-aubergine placeholder-cabinet-aubergine/50 font-sans focus:border-royal-gold focus:outline-none"
+                  />
                 </div>
-                <h3 className="font-playfair font-bold text-pearl text-lg mb-3 group-hover:text-pearl/90 transition-colors">
-                  {card.name}
-                </h3>
-                <p className="text-pearl/80 font-raleway text-sm leading-relaxed flex-1 group-hover:text-pearl/70 transition-colors">
-                  {card.punchline}
-                </p>
-                <div className="mt-4 flex items-center justify-between">
-                  <div className="w-2 h-2 bg-pearl/60 rounded-full group-hover:bg-pearl transition-colors"></div>
-                  <div className="text-pearl/60 text-xs font-raleway group-hover:text-pearl/80 transition-colors">
-                    Cliquez pour explorer
-                  </div>
+              </div>
+
+              {/* Suits */}
+              <div>
+                <label className="block text-royal-purple font-sans font-medium mb-2">
+                  Suits / Couleurs
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {['♦', '♠', '♥', '♣'].map(suit => (
+                    <button
+                      key={suit}
+                      onClick={() => {
+                        const newSuits = new Set(selectedSuits);
+                        if (newSuits.has(suit)) {
+                          newSuits.delete(suit);
+                        } else {
+                          newSuits.add(suit);
+                        }
+                        setSelectedSuits(newSuits);
+                      }}
+                      className={`w-10 h-10 rounded-lg border-2 font-serif text-xl transition-all duration-200 ${
+                        selectedSuits.has(suit)
+                          ? 'bg-royal-gold border-royal-gold text-royal-purple'
+                          : 'bg-royal-pearl border-royal-gold/30 text-cabinet-aubergine hover:border-royal-gold/50'
+                      }`}
+                    >
+                      {suit}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Keywords */}
+              <div>
+                <label className="block text-royal-purple font-sans font-medium mb-2">
+                  Keywords / Mots-clés
+                </label>
+                <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
+                  {allKeywords.map(keyword => (
+                    <button
+                      key={keyword}
+                      onClick={() => {
+                        const newKeywords = new Set(selectedKeywords);
+                        if (newKeywords.has(keyword)) {
+                          newKeywords.delete(keyword);
+                        } else {
+                          newKeywords.add(keyword);
+                        }
+                        setSelectedKeywords(newKeywords);
+                      }}
+                      className={`px-3 py-1 rounded-full text-xs font-sans border transition-all duration-200 ${
+                        selectedKeywords.has(keyword)
+                          ? 'bg-royal-gold border-royal-gold text-royal-purple'
+                          : 'bg-royal-pearl border-royal-gold/30 text-cabinet-aubergine hover:border-royal-gold/50'
+                      }`}
+                    >
+                      {keyword}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
+
+            {/* Filter Summary */}
+            <div className="mt-4 pt-4 border-t border-royal-gold/20">
+              <div className="flex items-center justify-between">
+                <span className="text-cabinet-aubergine font-sans text-sm">
+                  {filteredCards.length} of {demoCards.length} cards shown
+                </span>
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedSuits(new Set());
+                    setSelectedKeywords(new Set());
+                  }}
+                  className="text-royal-purple font-sans text-sm hover:text-royal-gold transition-colors"
+                >
+                  Clear all filters
+                </button>
+              </div>
+            </div>
           </motion.div>
-        ))}
+        )}
+      </AnimatePresence>
+
+      {/* 3-Card Spread Mode */}
+      <AnimatePresence>
+        {spreadMode && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-royal-velvet/70 z-40 flex items-center justify-center p-4"
+          >
+            <div className="text-center">
+              <h2 className="text-3xl font-serif font-bold text-royal-pearl mb-8">
+                Your 3-Card Spread / Votre Tirage 3 Cartes
+              </h2>
+              <div className="flex justify-center space-x-8">
+                {spreadCards.map((card, index) => (
+                  <motion.div
+                    key={card.id}
+                    initial={{ opacity: 0, rotateY: 180, x: 0 }}
+                    animate={{ 
+                      opacity: 1, 
+                      rotateY: 0, 
+                      x: (index - 1) * 20,
+                      rotate: (index - 1) * 15
+                    }}
+                    transition={{ duration: 0.8, delay: index * 0.2 }}
+                    className="w-32 h-48"
+                  >
+                    <div className={`w-full h-full rounded-xl bg-gradient-to-br ${card.color} border-2 border-royal-gold shadow-golden overflow-hidden`}>
+                      <img 
+                        src={card.image} 
+                        alt={card.name}
+                        className="w-full h-full object-cover opacity-80"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-royal-velvet/80 via-transparent to-transparent"></div>
+                      <div className="absolute bottom-2 left-2 right-2">
+                        <h3 className="text-royal-pearl font-serif font-bold text-sm leading-tight">
+                          {card.name}
+                        </h3>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+              <p className="text-royal-pearl/80 font-sans text-lg mt-8">
+                Méditation sur ces trois archétypes...
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Cards Grid - Fixed Size Layout */}
+      <div
+        ref={containerRef}
+        className="grid gap-4 md:gap-6 justify-items-center grid-cols-[repeat(auto-fit,160px)] md:grid-cols-[repeat(auto-fit,220px)]"
+      >
+        {filteredCards.map((card) => {
+          const isOpened = progress.openedCards.has(card.id);
+          
+          return (
+            <Tilt
+              key={card.id}
+              tiltEnable={!prefersReducedMotion && !spreadMode}
+              tiltMaxAngleX={6}
+              tiltMaxAngleY={6}
+              perspective={1000}
+              className="w-full"
+            >
+              <motion.div
+                ref={(el) => {
+                  if (el) cardRefs.current[card.id] = el;
+                }}
+                className={`relative rounded-xl overflow-hidden cursor-pointer group shadow-royal transition-all duration-300 w-[160px] h-[240px] md:w-[220px] md:h-[330px] ${
+                  isOpened 
+                    ? 'border border-royal-gold/50 shadow-golden' 
+                    : 'border border-royal-gold/30'
+                }`}
+                onClick={() => handleCardClick(card)}
+                whileHover={prefersReducedMotion ? {} : { y: -6, scale: 1.02 }}
+                layout
+              >
+                {/* Halo effect for opened cards */}
+                {isOpened && !prefersReducedMotion && (
+                  <div className="absolute -inset-1 bg-gradient-to-r from-royal-gold/30 to-royal-champagne/30 rounded-xl blur-sm"></div>
+                )}
+                
+                {/* Full Art Background */}
+                <img 
+                  src={card.image} 
+                  alt={card.name}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  loading="lazy"
+                />
+                
+                {/* Opened indicator */}
+                {isOpened && (
+                  <div className="absolute top-3 right-3 w-2 h-2 md:w-3 md:h-3 bg-royal-gold rounded-full shadow-soft animate-pulse z-20"></div>
+                )}
+                
+                {/* Hover indicator */}
+                <div className="absolute top-3 left-3 w-1.5 h-1.5 md:w-2 md:h-2 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20"></div>
+                
+                {/* Title and Content - Hidden by default, shown on hover */}
+                <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200`} />
+                
+                <div className="absolute inset-0 p-3 md:p-4 flex flex-col justify-end z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <div className="text-white space-y-2">
+                    {/* Title */}
+                    <h3 className="font-serif font-bold text-sm md:text-base leading-tight line-clamp-2">
+                      {card.name}
+                    </h3>
+                    
+                    {/* Punchline - Truncated */}
+                    <p className="text-white/90 font-sans text-xs leading-relaxed line-clamp-2">
+                      {card.punchline}
+                    </p>
+                    
+                    {/* Tags Container */}
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {card.keywords.slice(0, 2).map(keyword => (
+                        <span 
+                          key={keyword}
+                          className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full backdrop-blur-sm truncate max-w-[4rem] md:max-w-[5rem]"
+                          title={keyword}
+                        >
+                          {keyword}
+                        </span>
+                      ))}
+                      {card.keywords.length > 2 && (
+                        <span className="text-xs text-white/60 px-1">
+                          +{card.keywords.length - 2}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </Tilt>
+          );
+        })}
       </div>
 
-      {/* Footer */}
-      <div className="text-center py-8">
-        <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-imperial-gold/20 to-champagne-pink/20 rounded-full px-6 py-3 border border-imperial-gold/30">
-          <div className="w-3 h-3 bg-imperial-gold rounded-full animate-pulse"></div>
-          <span className="text-royal-purple font-raleway font-medium">
-            Plus de cartes à venir...
-          </span>
+      {/* Card Detail Modal */}
+      <Transition appear show={!!selectedCard} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={handleCloseCard}>
+          <Transition.Child
+            as={Fragment}
+            enter={prefersReducedMotion ? "" : "ease-out duration-300"}
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave={prefersReducedMotion ? "" : "ease-in duration-200"}
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter={prefersReducedMotion ? "" : "ease-out duration-300"}
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave={prefersReducedMotion ? "" : "ease-in duration-200"}
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel ref={modalPanelRef} className="w-full max-w-md transform overflow-hidden rounded-2xl bg-[#F9F5EF] p-6 text-left align-middle shadow-royal transition-all">
+                  {selectedCard && (
+                    <>
+                      <motion.div layoutId={`card-${selectedCard.id}`}>
+                        <img
+                          src={selectedCard.image}
+                          alt={selectedCard.name}
+                          className="w-full h-auto max-h-[40vh] object-contain rounded-lg mx-auto sm:w-[220px] sm:h-[330px]"
+                        />
+                      </motion.div>
+                      <div className="mt-4">
+                        <Dialog.Title
+                          as="h3"
+                          className="text-2xl font-bold font-playfair leading-6 text-royal-purple text-center"
+                        >
+                          {selectedCard.name}
+                        </Dialog.Title>
+                        <div className="mt-2 text-center">
+                          <p className="text-sm text-cabinet-aubergine/80 font-sans italic">
+                            "{selectedCard.mirrorQuestion}"
+                          </p>
+                        </div>
+                        <div className="mt-4">
+                           <p className="text-base text-cabinet-aubergine font-sans text-center">
+                            {selectedCard.punchline}
+                          </p>
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap justify-center gap-2">
+                          {selectedCard.keywords.map((keyword) => (
+                            <span key={keyword} className="bg-royal-gold/20 text-royal-purple text-xs font-medium px-2.5 py-1 rounded-full">
+                              {keyword}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mt-6 flex flex-col sm:flex-row gap-4">
+                        <button
+                          type="button"
+                          className="inline-flex w-full justify-center rounded-md border border-transparent bg-royal-gold px-4 py-2 text-sm font-medium text-royal-purple hover:bg-royal-gold/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-royal-gold focus-visible:ring-offset-2"
+                          onClick={() => handleAddToJournal(selectedCard)}
+                        >
+                          Ajouter au Journal / Add to Journal
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isSharing}
+                          className="inline-flex w-full justify-center rounded-md border border-royal-gold bg-transparent px-4 py-2 text-sm font-medium text-royal-purple hover:bg-royal-gold/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-royal-gold focus-visible:ring-offset-2 disabled:opacity-50"
+                          onClick={() => handleSharePNG(selectedCard)}
+                        >
+                          {isSharing ? <ArrowPathIcon className="w-5 h-5 animate-spin mr-2" /> : null}
+                          Partager (PNG) / Share (PNG)
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+                        onClick={handleCloseCard}
+                      >
+                        <span className="sr-only">Close</span>
+                        <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                      </button>
+                    </>
+                  )}
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
+      {/* Empty State */}
+      {filteredCards.length === 0 && (
+        <div className="text-center py-16">
+          <div className="w-24 h-24 bg-gradient-to-br from-royal-gold/20 to-royal-champagne/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <MagnifyingGlassIcon className="w-12 h-12 text-cabinet-aubergine/50" />
+          </div>
+          <h3 className="text-2xl font-serif font-bold text-royal-purple mb-4">
+            Aucune carte trouvée / No cards found
+          </h3>
+          <p className="text-cabinet-aubergine/70 font-sans">
+            Essayez d'ajuster vos filtres ou votre recherche
+          </p>
         </div>
-      </div>
+      )}
+
+      {/* Instructions Panel */}
+      <InstructionPanel />
     </motion.div>
   );
 };
+
+const InstructionPanel = () => {
+  const prefersReducedMotion = useMediaQuery({ query: '(prefers-reduced-motion: reduce)' });
+
+  const instructions = [
+    {
+      icon: '/assets/illustrations/cards.svg',
+      title: 'Explorer / Explore',
+      subtitle: 'Découvrez votre essence',
+      description: 'Cliquez sur une carte pour révéler son message et sa question miroir, une introspection guidée.',
+      ariaLabel: 'Explorer - découvrez comment explorer vos cartes'
+    },
+    {
+      icon: '/assets/illustrations/journal.svg',
+      title: 'Journaler / Journal',
+      subtitle: 'Consignez vos réflexions',
+      description: 'Ajoutez les questions qui vous inspirent à votre journal d\'âme personnel pour une analyse plus profonde.',
+      ariaLabel: 'Journaler - découvrez comment utiliser votre journal'
+    },
+    {
+      icon: '/assets/illustrations/sparkles.svg',
+      title: 'Tirage / Spread',
+      subtitle: 'Obtenez une vue d\'ensemble',
+      description: 'Utilisez le tirage à 3 cartes pour une méditation guidée sur votre situation actuelle.',
+      ariaLabel: 'Tirage - découvrez comment faire un tirage de cartes'
+    },
+    {
+      icon: '/assets/illustrations/crown.svg',
+      title: 'Progresser / Progress',
+      subtitle: 'Suivez votre parcours',
+      description: 'Débloquez des célébrations spéciales en explorant plus de cartes et en complétant votre collection.',
+      ariaLabel: 'Progresser - découvrez comment suivre votre progression'
+    }
+  ];
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: prefersReducedMotion ? 0 : 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: prefersReducedMotion ? 0 : 0.5
+      }
+    }
+  };
+
+  return (
+    <section className="mt-16 text-center" aria-labelledby="instruction-title">
+      <div className="relative bg-[#F9F5EF] rounded-2xl p-8 border border-royal-gold/20 max-w-5xl mx-auto overflow-hidden shadow-[inset_0_0_80px_40px_rgba(249,245,239,1)]">
+        <div className="relative z-10">
+          <h2 id="instruction-title" className="text-3xl font-serif font-bold text-royal-purple mb-4">
+            Comment utiliser vos cartes
+          </h2>
+          <p className="text-lg text-cabinet-aubergine/70 font-sans mb-8 max-w-2xl mx-auto">
+            Quatre étapes simples pour commencer votre voyage introspectif.
+          </p>
+          
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.3 }}
+          >
+            {instructions.map((item) => (
+              <motion.div key={item.title} variants={itemVariants}>
+                <button 
+                  className="w-full h-full text-left p-6 bg-royal-pearl/50 rounded-xl border border-royal-gold/40 shadow-inner-soft transition-all duration-300
+                             hover:-translate-y-0.5 hover:ring-2 hover:ring-royal-gold/40 focus:outline-none focus:-translate-y-0.5 focus:ring-2 focus:ring-royal-gold/40"
+                  aria-label={item.ariaLabel}
+                >
+                  <img src={item.icon} alt="" className="w-8 h-8 mb-4 text-royal-purple" />
+                  <h3 className="font-playfair font-bold text-royal-purple text-lg">
+                    {item.title}
+                  </h3>
+                  <h4 className="font-inter font-medium text-rose-champagne text-sm mb-3">
+                    {item.subtitle}
+                  </h4>
+                  <p className="font-inter text-sm text-cabinet-aubergine/90 line-clamp-3">
+                    {item.description}
+                  </p>
+                </button>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default CardsPage;

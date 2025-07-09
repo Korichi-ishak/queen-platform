@@ -16,15 +16,15 @@ const quickActions = [
     description: 'Explorez vos cartes personnalisées',
     icon: RectangleStackIcon,
     path: '/cards',
-    color: 'from-imperial-gold/20 to-champagne-pink/20',
-    iconColor: 'text-imperial-gold'
+    color: 'from-royal-gold/20 to-royal-champagne/20',
+    iconColor: 'text-royal-gold'
   },
   {
     title: 'Quiz Royal',
     description: 'Testez votre essence royale',
     icon: ClipboardDocumentListIcon,
     path: '/quiz',
-    color: 'from-royal-purple/20 to-aubergine-violet/20',
+    color: 'from-royal-purple/20 to-cabinet-aubergine/20',
     iconColor: 'text-royal-purple'
   },
   {
@@ -32,16 +32,16 @@ const quickActions = [
     description: 'Créez votre journal personnel',
     icon: BookOpenIcon,
     path: '/journal',
-    color: 'from-champagne-pink/20 to-powder/20',
-    iconColor: 'text-champagne-pink'
+    color: 'from-royal-champagne/20 to-cabinet-powder/20',
+    iconColor: 'text-royal-champagne'
   },
   {
     title: 'Afternoon Tea',
     description: 'Rejoignez le salon de thé',
     icon: ChatBubbleLeftRightIcon,
     path: '/chat',
-    color: 'from-smokedGold/20 to-vintage/20',
-    iconColor: 'text-smokedGold'
+    color: 'from-ritual-smokedGold/20 to-ritual-vintage/20',
+    iconColor: 'text-ritual-smokedGold'
   }
 ];
 
@@ -53,31 +53,32 @@ const DashboardHome = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="space-y-8"
+      className="first:pt-0 last:pb-0"
     >
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-royal-purple/10 to-champagne-pink/10 rounded-2xl p-8 border border-imperial-gold/20">
+      <div className="bg-gradient-to-r from-royal-purple/10 to-royal-champagne/10 rounded-2xl p-8 border border-royal-gold/20 mb-12 lg:mb-16">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-4xl font-playfair font-bold text-royal-purple mb-2">
-              Bienvenue, {user?.firstName} 👑
+            <h1 className="text-4xl font-serif font-bold text-royal-purple mb-2 flex items-center">
+              Bienvenue, {user?.firstName} 
+              <SparklesIcon className="w-8 h-8 text-royal-gold ml-4" />
             </h1>
-            <p className="text-aubergine-violet/70 font-raleway text-lg">
+            <p className="text-cabinet-aubergine/70 font-sans text-lg">
               Votre royaume personnel vous attend. Explorez, découvrez, révélez votre essence royale.
             </p>
           </div>
           <div className="hidden md:flex items-center space-x-2">
-            <SparklesIcon className="w-8 h-8 text-imperial-gold" />
+            <SparklesIcon className="w-8 h-8 text-royal-gold" />
             <div className="text-right">
-              <p className="text-royal-purple font-raleway font-bold text-2xl">7</p>
-              <p className="text-aubergine-violet/70 text-sm">spots left</p>
+              <p className="text-royal-purple font-sans font-bold text-2xl">7</p>
+              <p className="text-cabinet-aubergine/70 text-sm">spots left</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Quick Actions Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 lg:mb-16">
         {quickActions.map((action, index) => {
           const Icon = action.icon;
           return (
@@ -91,18 +92,18 @@ const DashboardHome = () => {
             >
               <Link
                 to={action.path}
-                className={`block p-6 rounded-xl bg-gradient-to-br ${action.color} border border-imperial-gold/30 shadow-soft hover:shadow-royal transition-all duration-300`}
+                className={`block p-6 rounded-xl bg-gradient-to-br ${action.color} border border-royal-gold/30 shadow-soft hover:shadow-royal transition-all duration-300`}
               >
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-lg bg-gradient-to-br from-pearl to-champagne-pink/20 ${action.iconColor} group-hover:scale-110 transition-transform`}>
+                  <div className={`p-3 rounded-lg bg-gradient-to-br from-royal-pearl to-royal-champagne/20 ${action.iconColor} group-hover:scale-110 transition-transform`}>
                     <Icon className="w-6 h-6" />
                   </div>
-                  <div className="w-2 h-2 bg-imperial-gold rounded-full opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="w-2 h-2 bg-royal-gold rounded-full opacity-50 group-hover:opacity-100 transition-opacity"></div>
                 </div>
-                <h3 className="font-playfair font-bold text-royal-purple text-lg mb-2">
+                <h3 className="font-serif font-bold text-royal-purple text-lg mb-2">
                   {action.title}
                 </h3>
-                <p className="text-aubergine-violet/70 font-raleway text-sm">
+                <p className="text-cabinet-aubergine/70 font-sans text-sm">
                   {action.description}
                 </p>
               </Link>
@@ -112,20 +113,20 @@ const DashboardHome = () => {
       </div>
 
       {/* Recent Activity */}
-      <div className="bg-gradient-to-r from-pearl to-champagne-pink/30 rounded-2xl p-8 border border-imperial-gold/20">
-        <h2 className="text-2xl font-playfair font-bold text-royal-purple mb-6">
+      <div className="bg-gradient-to-r from-royal-pearl to-royal-champagne/30 rounded-2xl p-8 border border-royal-gold/20 mb-12 lg:mb-16">
+        <h2 className="text-2xl font-serif font-bold text-royal-purple mb-6">
           Activité Récente
         </h2>
         <div className="space-y-4">
-          <div className="flex items-center space-x-4 p-4 bg-gradient-to-r from-imperial-gold/10 to-champagne-pink/10 rounded-lg">
-            <div className="w-10 h-10 bg-gradient-to-br from-imperial-gold to-champagne-pink rounded-full flex items-center justify-center">
+          <div className="flex items-center space-x-4 p-4 bg-gradient-to-r from-royal-gold/10 to-royal-champagne/10 rounded-lg">
+            <div className="w-10 h-10 bg-gradient-to-br from-royal-gold to-royal-champagne rounded-full flex items-center justify-center">
               <SparklesIcon className="w-5 h-5 text-royal-purple" />
             </div>
             <div>
-              <p className="font-raleway font-medium text-royal-purple">
+              <p className="font-sans font-medium text-royal-purple">
                 Bienvenue dans votre royaume !
               </p>
-              <p className="text-aubergine-violet/70 text-sm">
+              <p className="text-cabinet-aubergine/70 text-sm">
                 Explorez vos premières cartes pour commencer votre voyage royal
               </p>
             </div>
@@ -134,22 +135,22 @@ const DashboardHome = () => {
       </div>
 
       {/* Boutique Preview */}
-      <div className="bg-gradient-to-r from-smokedGold/10 to-vintage/10 rounded-2xl p-8 border border-imperial-gold/20">
+      <div className="bg-gradient-to-r from-ritual-smokedGold/10 to-ritual-vintage/10 rounded-2xl p-8 border border-royal-gold/20">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-playfair font-bold text-royal-purple mb-2">
+            <h2 className="text-2xl font-serif font-bold text-royal-purple mb-2">
               Boutique Royal
             </h2>
-            <p className="text-aubergine-violet/70 font-raleway">
+            <p className="text-cabinet-aubergine/70 font-sans">
               Découvrez notre collection exclusive
             </p>
           </div>
           <Link
             to="/shop"
-            className="inline-flex items-center space-x-2 bg-gradient-to-r from-imperial-gold/20 to-champagne-pink/20 rounded-full px-6 py-3 border border-imperial-gold/30 hover:from-imperial-gold/30 hover:to-champagne-pink/30 transition-all duration-200"
+            className="inline-flex items-center space-x-2 bg-gradient-to-r from-royal-gold/20 to-royal-champagne/20 rounded-full px-6 py-3 border border-royal-gold/30 hover:from-royal-gold/30 hover:to-royal-champagne/30 transition-all duration-200"
           >
-            <ShoppingBagIcon className="w-5 h-5 text-imperial-gold" />
-            <span className="text-royal-purple font-raleway font-medium">
+            <ShoppingBagIcon className="w-5 h-5 text-royal-gold" />
+            <span className="text-royal-purple font-sans font-medium">
               Voir la boutique
             </span>
           </Link>

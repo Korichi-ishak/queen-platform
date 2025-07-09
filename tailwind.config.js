@@ -45,18 +45,6 @@ export default {
           800: '#1B1B1B',
           900: '#181818',
         },
-        'royal-purple': '#3B1E50',
-        'imperial-gold': '#D6AE60',
-        'aubergine-violet': '#5A2A6D',
-        'velvet-black': '#1B1B1B',
-        'pearl-white': '#FDF7F2',
-        'champagne-pink': '#D4B5A5',
-        'royal-gold': '#C8A96B',
-        'smokedGold': '#C8A96B',
-        'vintage': '#E3BBB2',
-        'indigo': '#241B2F',
-        'powder': '#E8C5C1',
-        'pearl': '#FDF7F2',
       },
       // Queen de Q Typography
       fontFamily: {
@@ -65,10 +53,6 @@ export default {
         'quote': ['"Playfair Display"', 'serif'],
         'sans': ['"Raleway"', 'system-ui', 'sans-serif'],
         'serif': ['"Playfair Display"', 'Georgia', 'serif'],
-        'playfair': ['"Playfair Display"', 'serif'],
-        'cinzel': ['Cinzel', 'serif'],
-        'raleway': ['Raleway', 'sans-serif'],
-        'inter': ['Inter', 'sans-serif'],
       },
       // Gradient backgrounds
       backgroundImage: {
@@ -83,9 +67,6 @@ export default {
         'royal': '0 4px 20px rgba(59, 30, 80, 0.15)',
         'golden': '0 4px 20px rgba(214, 174, 96, 0.15)',
         'soft': '0 2px 10px rgba(75, 46, 67, 0.1)',
-        'glow': '0 0 30px rgba(214, 174, 96, 0.4)',
-        '3xl': '0 35px 60px -12px rgba(0, 0, 0, 0.25)',
-        'inner-glow': 'inset 0 0 20px rgba(214, 174, 96, 0.1)',
       },
       // Animations mystiques
       animation: {
@@ -94,10 +75,6 @@ export default {
         'sparkle': 'sparkle 1.5s ease-in-out infinite',
         'fade-in': 'fadeIn 0.8s ease-out',
         'slide-up': 'slideUp 0.6s ease-out',
-        'pulse-glow': 'pulseGlow 3s ease-in-out infinite',
-        'rotate-slow': 'rotateSlow 20s linear infinite',
-        'shimmer': 'shimmer 2s ease-in-out infinite',
-        'breathe': 'breathe 4s ease-in-out infinite',
       },
       keyframes: {
         float: {
@@ -120,25 +97,11 @@ export default {
           '0%': { transform: 'translateY(30px)', opacity: 0 },
           '100%': { transform: 'translateY(0)', opacity: 1 },
         },
-        pulseGlow: {
-          '0%, 100%': { boxShadow: '0 0 20px rgba(214, 174, 96, 0.3)' },
-          '50%': { boxShadow: '0 0 40px rgba(214, 174, 96, 0.6)' },
-        },
-        rotateSlow: {
-          '0%': { transform: 'rotate(0deg)' },
-          '100%': { transform: 'rotate(360deg)' },
-        },
-        shimmer: {
-          '0%': { backgroundPosition: '-200% 0' },
-          '100%': { backgroundPosition: '200% 0' },
-        },
-        breathe: {
-          '0%, 100%': { transform: 'scale(1)', opacity: 0.8 },
-          '50%': { transform: 'scale(1.05)', opacity: 1 },
-        },
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/line-clamp'),
+  ],
 }
 

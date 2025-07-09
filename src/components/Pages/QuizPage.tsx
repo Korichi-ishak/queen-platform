@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import confetti from 'canvas-confetti';
+import { gsap } from 'gsap';
+import Tilt from 'react-parallax-tilt';
 import { 
   HeartIcon, 
   SparklesIcon, 
@@ -13,6 +14,9 @@ import {
   ArrowRightIcon,
   ArrowLeftIcon 
 } from '@heroicons/react/24/outline';
+
+// Lazy load confetti
+const loadConfetti = () => import('canvas-confetti');
 
 interface QuizQuestion {
   id: number;
@@ -118,27 +122,27 @@ const quizQuestions: QuizQuestion[] = [
 const queenResults: { [key: string]: QuizResult } = {
   'Bienveillante': {
     name: 'La Reine Bienveillante',
-    portrait: '💖',
+    portrait: '/assets/images/logo-gold.webp',
     description: 'Votre cœur rayonne de compassion. Vous êtes une source d\'amour et de réconfort pour tous ceux qui vous entourent.',
-    color: 'from-champagne-pink to-powder'
+    color: 'from-royal-champagne to-cabinet-powder'
   },
   'Créative': {
     name: 'L\'Impératrice Créative',
-    portrait: '🎨',
+    portrait: '/assets/images/logo-gold.webp',
     description: 'Votre imagination n\'a pas de limites. Vous transformez le monde par votre art et votre créativité.',
-    color: 'from-royal-purple to-aubergine-violet'
+    color: 'from-royal-purple to-cabinet-aubergine'
   },
   'Sage': {
     name: 'La Souveraine Sage',
-    portrait: '🔮',
+    portrait: '/assets/images/logo-gold.webp',
     description: 'Votre sagesse éclaire le chemin. Vous guidez les autres vers la vérité et la compréhension.',
-    color: 'from-smokedGold to-vintage'
+    color: 'from-ritual-smokedGold to-ritual-vintage'
   },
   'Guerrière': {
     name: 'La Reine Guerrière',
-    portrait: '⚔️',
+    portrait: '/assets/images/logo-gold.webp',
     description: 'Votre force intérieure est inébranlable. Vous surmontez tous les obstacles avec courage et détermination.',
-    color: 'from-indigo to-royal-purple'
+    color: 'from-ritual-indigo to-royal-purple'
   }
 };
 
@@ -148,12 +152,44 @@ const QuizPage = () => {
   const [showResult, setShowResult] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [result, setResult] = useState<QuizResult | null>(null);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    // Check for reduced motion preference
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      setPrefersReducedMotion(e.matches);
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  useEffect(() => {
+    // Staggered icon reveal animation
+    if (!prefersReducedMotion) {
+      const icons = document.querySelectorAll('.quiz-option-icon');
+      gsap.fromTo(icons, 
+        { opacity: 0, scale: 0.8, rotateY: 90 },
+        { 
+          opacity: 1, 
+          scale: 1, 
+          rotateY: 0,
+          duration: 0.6,
+          stagger: 0.12,
+          ease: "power2.out"
+        }
+      );
+    }
+  }, [currentQuestion, prefersReducedMotion]);
 
   const handleAnswerSelect = (optionId: string) => {
     setSelectedAnswer(optionId);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!selectedAnswer) return;
 
     const newAnswers = { ...answers, [currentQuestion]: selectedAnswer };
@@ -180,14 +216,20 @@ const QuizPage = () => {
       setResult(queenResults[topArchetype]);
       setShowResult(true);
       
-      // Trigger confetti
-      setTimeout(() => {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#D6AE60', '#D4B5A5', '#3B1E50', '#C8A96B']
-        });
+      // Trigger confetti with lazy loading
+      setTimeout(async () => {
+        try {
+          const confettiModule = await loadConfetti();
+          const confetti = confettiModule.default;
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#D6AE60', '#D4B5A5', '#3B1E50', '#C8A96B']
+          });
+        } catch (error) {
+          console.log('Confetti could not be loaded:', error);
+        }
       }, 500);
 
       // Track event (placeholder for Plausible)
@@ -219,68 +261,57 @@ const QuizPage = () => {
   if (showResult && result) {
     return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6 }}
-        className="min-h-screen flex items-center justify-center p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex flex-col items-center justify-center min-h-[80vh] text-center first:pt-0 last:pb-0"
       >
-        <div className="max-w-2xl w-full text-center">
+        <div className={`bg-gradient-to-br ${result.color} rounded-3xl p-12 shadow-royal border border-royal-gold/30 max-w-2xl mx-auto mb-8`}>
           <motion.div
-            initial={{ y: -50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.6, type: "spring" }}
             className="mb-8"
           >
-            <div className="text-8xl mb-6">{result.portrait}</div>
-            <h1 className="text-4xl font-playfair font-bold text-royal-purple mb-4">
-              {result.name}
-            </h1>
-            <p className="text-aubergine-violet/70 font-raleway text-lg leading-relaxed max-w-xl mx-auto">
-              {result.description}
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className={`bg-gradient-to-br ${result.color} rounded-2xl p-8 shadow-royal border border-imperial-gold/20 mb-8`}
-          >
-            <h2 className="text-2xl font-playfair font-bold text-pearl mb-4">
-              Votre Essence Royale
-            </h2>
-            <div className="grid grid-cols-2 gap-6 text-pearl/90">
-              <div>
-                <h3 className="font-raleway font-bold mb-2">Vos Forces</h3>
-                <ul className="text-sm space-y-1">
-                  <li>• Leadership naturel</li>
-                  <li>• Intuition développée</li>
-                  <li>• Capacité d'inspiration</li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-raleway font-bold mb-2">Votre Mission</h3>
-                <p className="text-sm">
-                  Révéler votre plein potentiel et inspirer les autres à faire de même.
-                </p>
-              </div>
+            <div className="w-32 h-32 bg-gradient-to-br from-royal-gold to-royal-champagne rounded-full flex items-center justify-center mx-auto mb-6 shadow-golden">
+              <img 
+                src={result.portrait} 
+                alt={result.name}
+                className="w-20 h-20 object-cover rounded-full"
+              />
             </div>
           </motion.div>
-
-          <div className="flex gap-4 justify-center">
+          
+          <motion.h1
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-4xl font-serif font-bold text-royal-pearl mb-6"
+          >
+            {result.name}
+          </motion.h1>
+          
+          <motion.p
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="text-royal-pearl/90 font-sans text-lg leading-relaxed mb-8"
+          >
+            {result.description}
+          </motion.p>
+          
+          <motion.div
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.7 }}
+            className="flex flex-wrap gap-4 justify-center"
+          >
             <button
               onClick={handleRestart}
-              className="bg-gradient-to-r from-royal-purple to-aubergine-violet text-pearl px-6 py-3 rounded-lg font-raleway font-medium hover:from-royal-purple/90 hover:to-aubergine-violet/90 transition-all duration-200 shadow-royal"
+              className="bg-gradient-to-r from-royal-gold/20 to-royal-champagne/20 border border-royal-gold/30 rounded-full px-8 py-3 text-royal-pearl font-sans font-medium hover:from-royal-gold/30 hover:to-royal-champagne/30 transition-all duration-200"
             >
-              Recommencer le Quiz
+              Recommencer
             </button>
-            <button
-              onClick={() => window.location.href = '/cards'}
-              className="bg-gradient-to-r from-imperial-gold to-champagne-pink text-royal-purple px-6 py-3 rounded-lg font-raleway font-medium hover:from-imperial-gold/90 hover:to-champagne-pink/90 transition-all duration-200 shadow-golden"
-            >
-              Voir mes Cartes
-            </button>
-          </div>
+          </motion.div>
         </div>
       </motion.div>
     );
@@ -288,107 +319,135 @@ const QuizPage = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="min-h-screen flex items-center justify-center p-4"
+      className="first:pt-0 last:pb-0"
     >
-      <div className="max-w-2xl w-full">
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-royal-purple font-raleway font-medium">
-              Question {currentQuestion + 1} / {quizQuestions.length}
-            </span>
-            <span className="text-aubergine-violet/70 font-raleway text-sm">
-              {Math.round(progress)}% complété
-            </span>
-          </div>
-          <div className="w-full bg-champagne-pink/20 rounded-full h-2">
-            <motion.div
-              className="bg-gradient-to-r from-imperial-gold to-champagne-pink h-2 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
-        </div>
+      {/* Header */}
+      <div className="text-center mb-12 lg:mb-16">
+        <h1 className="text-4xl lg:text-5xl font-serif font-bold text-royal-purple mb-4">
+          Quiz Royal
+        </h1>
+        <p className="text-cabinet-aubergine/70 font-sans text-lg max-w-2xl mx-auto">
+          Découvrez votre archétype royal en 8 questions. Laissez votre intuition vous guider vers votre véritable essence.
+        </p>
+      </div>
 
-        {/* Question */}
-        <AnimatePresence mode="wait">
+      {/* Progress Bar */}
+      <div className="max-w-xl mx-auto mb-12 lg:mb-16">
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-royal-purple font-sans font-medium">
+            Question {currentQuestion + 1} / {quizQuestions.length}
+          </span>
+          <span className="text-cabinet-aubergine/70 font-sans text-sm">
+            {Math.round(((currentQuestion + 1) / quizQuestions.length) * 100)}% complété
+          </span>
+        </div>
+        <div className="w-full bg-royal-champagne/20 rounded-full h-3">
           <motion.div
-            key={currentQuestion}
-            initial={{ x: 50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -50, opacity: 0 }}
-            transition={{ duration: 0.4 }}
-            className="text-center mb-8"
-          >
-            <h2 className="text-3xl font-playfair font-bold text-royal-purple mb-6">
+            className="bg-gradient-to-r from-royal-gold to-royal-champagne h-3 rounded-full"
+            initial={{ width: 0 }}
+            animate={{ width: `${((currentQuestion + 1) / quizQuestions.length) * 100}%` }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          />
+        </div>
+      </div>
+
+      {/* Question */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentQuestion}
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -50 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-4xl mx-auto"
+        >
+          <div className="bg-gradient-to-r from-royal-pearl to-royal-champagne/30 rounded-2xl p-8 border border-royal-gold/20 mb-8">
+            <h2 className="text-2xl font-serif font-bold text-royal-purple text-center mb-8">
               {quizQuestions[currentQuestion].question}
             </h2>
-            
-            {/* Options */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+
+            {/* Options Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {quizQuestions[currentQuestion].options.map((option, index) => {
                 const Icon = option.icon;
                 const isSelected = selectedAnswer === option.id;
                 
                 return (
-                  <motion.button
+                  <Tilt
                     key={option.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.12 }}
-                    onClick={() => handleAnswerSelect(option.id)}
-                    className={`p-6 rounded-xl border-2 transition-all duration-200 ${
-                      isSelected
-                        ? 'border-imperial-gold bg-gradient-to-r from-imperial-gold/20 to-champagne-pink/20 shadow-golden'
-                        : 'border-imperial-gold/20 hover:border-imperial-gold/40 hover:bg-gradient-to-r hover:from-imperial-gold/10 hover:to-champagne-pink/10'
-                    }`}
+                    tiltEnable={!prefersReducedMotion}
+                    tiltMaxAngleX={3}
+                    tiltMaxAngleY={3}
+                    perspective={1000}
                   >
-                    <div className="flex items-center space-x-4">
-                      <div className={`p-3 rounded-lg ${
-                        isSelected 
-                          ? 'bg-imperial-gold text-royal-purple' 
-                          : 'bg-gradient-to-r from-imperial-gold/20 to-champagne-pink/20 text-imperial-gold'
-                      }`}>
-                        <Icon className="w-6 h-6" />
+                    <motion.button
+                      className={`quiz-option-icon relative p-6 rounded-xl transition-all duration-300 border-2 group ${
+                        isSelected
+                          ? 'bg-gradient-to-br from-royal-gold/30 to-royal-champagne/30 border-royal-gold text-royal-purple shadow-golden'
+                          : 'bg-gradient-to-br from-royal-pearl to-cabinet-parchment border-royal-gold/20 text-cabinet-aubergine hover:border-royal-gold/40 hover:from-royal-gold/10 hover:to-royal-champagne/10'
+                      }`}
+                      onClick={() => handleAnswerSelect(option.id)}
+                      whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="flex flex-col items-center space-y-4">
+                        <div className={`p-4 rounded-full transition-all duration-300 ${
+                          isSelected 
+                            ? 'bg-gradient-to-br from-royal-gold to-royal-champagne text-royal-purple' 
+                            : 'bg-gradient-to-br from-royal-purple/10 to-cabinet-aubergine/10 group-hover:from-royal-gold/20 group-hover:to-royal-champagne/20'
+                        }`}>
+                          <Icon className="w-8 h-8" />
+                        </div>
+                        <span className={`font-sans font-medium transition-colors ${
+                          isSelected ? 'text-royal-purple' : 'text-cabinet-aubergine'
+                        }`}>
+                          {option.text}
+                        </span>
                       </div>
-                      <span className={`font-raleway font-medium ${
-                        isSelected ? 'text-royal-purple' : 'text-aubergine-violet'
-                      }`}>
-                        {option.text}
-                      </span>
-                    </div>
-                  </motion.button>
+                      
+                      {isSelected && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-royal-gold rounded-full flex items-center justify-center"
+                        >
+                          <div className="w-2 h-2 bg-royal-purple rounded-full"></div>
+                        </motion.div>
+                      )}
+                    </motion.button>
+                  </Tilt>
                 );
               })}
             </div>
-          </motion.div>
-        </AnimatePresence>
+          </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between items-center">
-          <button
-            onClick={handlePrevious}
-            disabled={currentQuestion === 0}
-            className="flex items-center space-x-2 px-4 py-2 text-aubergine-violet hover:text-royal-purple transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ArrowLeftIcon className="w-5 h-5" />
-            <span className="font-raleway">Précédent</span>
-          </button>
+          {/* Navigation */}
+          <div className="flex items-center justify-between max-w-xl mx-auto">
+            <button
+              onClick={handlePrevious}
+              disabled={currentQuestion === 0}
+              className="flex items-center space-x-2 px-6 py-3 rounded-full border border-royal-gold/30 text-cabinet-aubergine disabled:opacity-50 disabled:cursor-not-allowed hover:bg-royal-gold/10 transition-colors"
+            >
+              <ArrowLeftIcon className="w-5 h-5" />
+              <span className="font-sans">Précédent</span>
+            </button>
 
-          <button
-            onClick={handleNext}
-            disabled={!selectedAnswer}
-            className="flex items-center space-x-2 bg-gradient-to-r from-royal-purple to-aubergine-violet text-pearl px-6 py-3 rounded-lg font-raleway font-medium hover:from-royal-purple/90 hover:to-aubergine-violet/90 transition-all duration-200 shadow-royal disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span>{currentQuestion === quizQuestions.length - 1 ? 'Voir le résultat' : 'Suivant'}</span>
-            <ArrowRightIcon className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
+            <button
+              onClick={handleNext}
+              disabled={!selectedAnswer}
+              className="flex items-center space-x-2 px-6 py-3 rounded-full bg-gradient-to-r from-royal-gold/20 to-royal-champagne/20 border border-royal-gold/30 text-royal-purple font-sans font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:from-royal-gold/30 hover:to-royal-champagne/30 transition-all duration-200"
+            >
+              <span>
+                {currentQuestion === quizQuestions.length - 1 ? 'Voir résultat' : 'Suivant'}
+              </span>
+              <ArrowRightIcon className="w-5 h-5" />
+            </button>
+          </div>
+        </motion.div>
+      </AnimatePresence>
     </motion.div>
   );
 };

@@ -8,6 +8,7 @@ import {
   ClipboardDocumentListIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
+import { useEffect, useState } from 'react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -49,40 +50,61 @@ const navItems = [
 
 const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const location = useLocation();
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
+
+  // Check if screen is large (desktop)
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsLargeScreen(window.innerWidth >= 1024);
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  // Animation logic: visible on desktop, animated drawer on mobile
+  const sidebarAnimation = {
+    initial: { x: isLargeScreen ? 0 : -280 },
+    animate: { 
+      x: isLargeScreen ? 0 : (isOpen ? 0 : -280)
+    },
+    transition: { duration: 0.3, ease: "easeInOut" }
+  };
 
   return (
     <>
       {/* Mobile backdrop */}
-      {isOpen && (
+      {isOpen && !isLargeScreen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+          className="fixed inset-0 bg-royal-velvet/50 z-20 lg:hidden"
           onClick={onClose}
         />
       )}
 
       {/* Sidebar */}
       <motion.div
-        initial={{ x: -280 }}
-        animate={{ x: isOpen ? 0 : -280 }}
-        transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="fixed lg:static inset-y-0 left-0 z-30 w-70 bg-gradient-to-b from-royal-purple to-aubergine-violet shadow-royal lg:translate-x-0"
+        initial={sidebarAnimation.initial}
+        animate={sidebarAnimation.animate}
+        transition={sidebarAnimation.transition}
+        className="fixed lg:static inset-y-0 left-0 z-30 w-70 bg-gradient-to-b from-royal-purple to-cabinet-aubergine shadow-royal"
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="p-6 border-b border-imperial-gold/20">
+          <div className="p-6 border-b border-royal-gold/20">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-imperial-gold to-champagne-pink rounded-full flex items-center justify-center">
-                  <span className="text-royal-purple font-playfair font-bold text-xl">Q</span>
+                <div className="w-10 h-10 bg-gradient-to-br from-royal-gold to-royal-champagne rounded-full flex items-center justify-center">
+                  <span className="text-royal-purple font-serif font-bold text-xl">Q</span>
                 </div>
                 <div>
-                  <h1 className="text-pearl font-playfair text-xl font-bold">Queen de Q</h1>
-                  <p className="text-champagne-pink text-sm">Dashboard</p>
+                  <h1 className="text-royal-pearl font-serif text-xl font-bold">Queen de Q</h1>
+                  <p className="text-royal-champagne text-sm">Dashboard</p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="lg:hidden text-pearl hover:text-champagne-pink transition-colors"
+                className="lg:hidden text-royal-pearl hover:text-royal-champagne transition-colors"
               >
                 <XMarkIcon className="w-6 h-6" />
               </button>
@@ -102,26 +124,26 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                   onClick={onClose}
                   className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                     isActive 
-                      ? 'bg-gradient-to-r from-imperial-gold/20 to-champagne-pink/20 text-imperial-gold border-l-4 border-imperial-gold' 
-                      : 'text-pearl hover:bg-imperial-gold/10 hover:text-champagne-pink'
+                      ? 'bg-gradient-to-r from-royal-gold/20 to-royal-champagne/20 text-royal-gold border-l-4 border-royal-gold' 
+                      : 'text-royal-pearl hover:bg-royal-gold/10 hover:text-royal-champagne'
                   }`}
                 >
                   <Icon className={`w-5 h-5 transition-transform group-hover:scale-110 ${
-                    isActive ? 'text-imperial-gold' : 'text-pearl'
+                    isActive ? 'text-royal-gold' : 'text-royal-pearl'
                   }`} />
-                  <span className="font-raleway font-medium">{item.label}</span>
+                  <span className="font-sans font-medium">{item.label}</span>
                 </Link>
               );
             })}
           </nav>
 
           {/* Footer */}
-          <div className="p-6 border-t border-imperial-gold/20">
-            <div className="bg-gradient-to-r from-imperial-gold/10 to-champagne-pink/10 rounded-lg p-4">
-              <p className="text-champagne-pink text-sm font-raleway">
+          <div className="p-6 border-t border-royal-gold/20">
+            <div className="bg-gradient-to-r from-royal-gold/10 to-royal-champagne/10 rounded-lg p-4">
+              <p className="text-royal-champagne text-sm font-sans">
                 "Révélez votre reine intérieure"
               </p>
-              <p className="text-pearl/60 text-xs mt-1">
+              <p className="text-royal-pearl/60 text-xs mt-1">
                 © 2024 Queen de Q
               </p>
             </div>

@@ -134,6 +134,155 @@ Commit → `chore: dashboard shell + global widgets`
 Commit → `feat: cards grid, mini-quiz, chat placeholder`
 
 ---
+todo before Sprint 02:
+"    The first delivery is close, but we must align strictly with our CdC requirements.
+    Please refactor the existing Sprint 01 work as follows (same Playfair + Inter fonts, royal-purple #3B1E50, imperial-gold #D6AE60):
+
+1 · Cards Collection (/cards)
+
+    Replace generic “Queen” cards with at least 8 demo masculine archetype faces (“4♦ Solar Manipulator”, etc.).
+
+    Layout = responsive masonry (2–6 cols). Use Tailwind masonry pattern.
+    flowbite.com
+    cruip.com
+
+    Hover: parallax-tilt ±6° (react-parallax-tilt).
+    npmjs.com
+    npmjs.com
+
+    Click: GSAP Flip zoom → side panel with name / punchline / mirror-question.
+    gsap.com
+    gsap.com
+
+    Respect prefers-reduced-motion (fade-only).
+    developer.mozilla.org
+    css-tricks.com
+
+2 · Mini-Quiz (/quiz)
+
+    Keep 8 questions but add staggered icon reveal (120 ms, GSAP/Motion).
+    developer.mozilla.org
+    gsap.com
+
+    Hover / tap: tiny tilt + gold glow (reuse parallax-tilt).
+
+    Progress bar: numeric “2 / 8” + animated width.
+    developer.mozilla.org
+
+    Result screen: Queen portrait, confetti burst (canvas-confetti).
+    npmjs.com
+    npmjs.com
+
+    Fire Plausible event quiz_finished.
+
+3 · Chat “Afternoon Tea” (/chat)
+
+    Rename persona Reine-Mère; tone = friendly grandma, uses fr “tu”.
+
+    Dialog 360×540, porcelain motif, glassmorphism BG.
+    tailwindcss-glassmorphism.vercel.app
+    epicweb.dev
+
+    Add typing indicator (…) 2 s → bubble “Coming soon / Bientôt disponible”.
+
+    Markup: <div role="dialog"> + focus-trap; follow W3C modal pattern.
+    developer.mozilla.org
+    w3.org
+
+4 · Global layout tweaks
+
+    Switch to sidebar dashboard template (collapsible on mobile).
+    creative-tim.com
+
+    Keep top bar for spots-left badge + music toggle.
+
+    Use Tailwind glass cards for quick links.
+    tailwindcss-glassmorphism.vercel.app
+
+5 · A11y & Performance
+
+    Axe-core 0 errors; Lighthouse ≥ 90.
+
+    Lazy-load all demo images; dynamic-import heavy libs (confetti, Tilt).
+
+    Disable motion & sound if prefers-reduced-motion. "
+
+
+## 🛠  Design-polish sprint – alignment, responsiveness, illustrations (no emojis)
+
+### 0 · Global layout fixes
+1. **Constrain max width**  
+   - Wrap every page in `div.mx-auto.max-w-7xl.px-4.sm:px-6.lg:px-8` so content is never glued to the left edge.  
+   - Remove custom `padding-left: 200px` hacks that create the blank strip on large screens.
+2. **Consistent vertical spacing**  
+   - Add `space-y-12 lg:space-y-16` between main sections to avoid random gaps.  
+   - Use Tailwind’s `first:pt-0 last:pb-0` utilities to keep top / bottom flush.
+3. **Sidebar / header**  
+   - Sidebar collapses to icons-only at `lg` breakpoint (`lg:w-60 -> w-16`) to reclaim space on tablets.  
+   - Move **spots-left badge** & **music toggle** into the top bar right-aligned flex container.
+
+---
+
+### 1 · Cards page (`/cards`)
+1. **Real images**  
+   - Use `/public/assets/images/card-01.png` and `/card-02.png` as demo faces.  
+   - Import via `import face1 from '@/assets/images/card-01.png';`
+2. **Grid**  
+   - `grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6` keeps it tight on every viewport.  
+   - No absolute positioning; each `CardItem` gets `min-h-[220px]` so heights are equal.
+3. **Card component**  
+   - Remove the emoji crown in the title; instead overlay the real card illustration (use `object-contain`).  
+   - On hover: small `translate-y-[-6px]` and `shadow-xl`, no tilt for now (keep GPU cheap).
+
+---
+
+### 2 · Dashboard home
+1. **Welcome block**  
+   - Replace the crown emoji in “Welcome, Client 👑” with a **vector icon**: `import CrownIcon from '@/assets/illustrations/crown.svg'`.  
+   - Place the icon 16 px to the right of the name, vertically centred.
+2. **Feature cards (Quick links)**  
+   - Each feature tile should use a 48×48 px illustration instead of the pastel emoji square.  
+   - Illustrations live in `/public/assets/illustrations/` (`cards.svg`, `quiz.svg`, `journal.svg`, `chat.svg`, `shop.svg`). Import eagerly.
+
+---
+
+### 3 · Quiz page
+1. **Icons**  
+   - Replace emoji-style option icons with the new flat illustrations (`heart.svg`, `sparkles.svg`, etc.).  
+   - Keep four options per question grid: `gap-6 sm:grid-cols-2`.
+2. **Progress bar alignment**  
+   - Centre the bar and label inside a `max-w-xl.mx-auto`.
+
+---
+
+### 4 · Chat page
+1. **Header**  
+   - Swap the avatar emoji for `grandma.svg` and set `w-10 h-10 rounded-full`.  
+   - Title block uses Playfair for “Salon de Thé Royal”, Inter 400 for subtitle.  
+2. **Bubble**  
+   - Remove the star emoji in “Bientôt disponible ✨”; replace with a small sparkle illustration 16 ×16 px prepended to the sentence.
+
+---
+
+### 5 · Journal & Shop placeholders
+- Apply the same rules: no emojis, use illustration icons (`book.svg`, `bag.svg`).  
+- Align headline, subtitle and “Coming Soon” badge to the centre via `text-center mx-auto max-w-lg`.
+
+---
+
+### 6 · Utility classes to add in `tailwind.config.js`
+```js
+theme: {
+  extend: {
+    boxShadow: {
+      royal: '0 6px 20px rgba(59,30,80,0.15)',
+    },
+  },
+},
+plugins: [
+  require('@tailwindcss/line-clamp'),
+],
+
 
 ## Sprint 2 · Journal & Shop (1.5 days)
 
@@ -149,7 +298,7 @@ Commit → `feat: cards grid, mini-quiz, chat placeholder`
 ### 3. Live banner
 - Sticky bottom “☕ Tea Time — 13 juillet 19h GMT+1”, slide-in, ✖ dismiss→localStorage 🕸 :contentReference[oaicite:9]{index=9}.
 
-Commit → `feat: journal d’âme, shop mock, live banner`
+
 
 ---
 
@@ -158,5 +307,59 @@ Commit → `feat: journal d’âme, shop mock, live banner`
 2. **Axe-core 0**, **Lighthouse ≥ 90**; lazy-load all heavy libs (confetti, Keen-slider).  
 3. **Translations**: every label bilingual FR / EN inside same string.
 
-Commit → `release: prototype dashboard v1.0` and deploy preview.
 
+
+    Sprint card page
+
+    Build the full “Cards Collection” experience exactly as outlined in our “best-of” scenario:
+
+        fluid masonry grid,
+
+        flip + halo animation,
+
+        side-sheet with title / punchline / mirror question,
+
+        “Add to Journal” hook & toast,
+
+        progress-ring with confetti milestones,
+
+        suit / keyword filters & fuzzy search,
+
+        optional “3-card Spread” animation,
+
+        shareable PNG via html2canvas,
+
+        full WCAG-AA and prefers-reduced-motion compliance.
+        Use the brand palette (royal-purple #3B1E50, imperial-gold #D6AE60, rose-champagne #D4B5A5, ivory #F9F5EF) and keep every animation light—GPU transforms only.
+
+    Must-have deliverables
+
+        Fluid masonry layout (CSS columns) with real archetype faces.
+
+        GSAP Flip for card ➜ side-panel transition; halo on hover.
+
+        Side-panel shows: illustration, archetype name (“4♦ Solar Manipulator”), 2-line punchline, italic mirror question, buttons “Add to Journal” & “Share PNG”.
+
+        LocalStorage: save opened-card IDs (for progress ring) and journal entries (title + question).
+
+        Progress ring top-right; confetti bursts at 10, 25, 54 opened.
+
+        Filters drawer left: Suit checkboxes + keyword multi-select + fuzzy search.
+
+        3-card Spread button animates three random cards into a fanned layout.
+
+        prefers-reduced-motion: replace flip with fade; disable confetti & spread animation.
+
+        All text & controls bilingual FR / EN in the same string.
+
+        Axe-core = 0, Lighthouse ≥ 90.
+
+    Implementation guard-rails
+
+        Lazy-load heavy libs (html2canvas, canvas-confetti) on first use.
+
+        Use only Playfair Display & Inter fonts already loaded.
+
+        Keep CSS colours in the extended Tailwind palette; do not introduce new hex values.
+
+        No back-end calls—everything local.
