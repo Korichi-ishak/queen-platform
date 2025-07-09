@@ -422,3 +422,48 @@ Definition of done
     Carousel renders beneath the grid, works on all breakpoints, passes Axe-core.
 
     No impact on Lighthouse perf (> 90)."
+
+
+
+
+## Add looping background track
+
+Assets
+
+    Place Roie Shpigler – Marbles.mp3 inside /public/audio/.
+
+Behaviour
+
+    First user interaction (click the music-note icon) should:
+
+        Create or unmute a single <audio id="bg-audio" src="/audio/Marbles.mp3" loop> element appended to <body> (if not already present).
+
+        Set volume = 0.2.
+
+        Play the audio and store localStorage.setItem('bgMusic','on').
+
+    Subsequent click toggles pause / play and updates localStorage ('on' / 'off').
+
+    On page load, read localStorage. If value is on and browser autoplay rules allow (i.e., we already have user gesture), start playing automatically.
+
+    Auto-pause when document.visibilityState === 'hidden'; resume when visible.
+
+    Respect user settings:
+
+        If prefers-reduced-motion or navigator.connection.saveData ⇒ start in muted state even if localStorage says “on”.
+
+UI feedback
+
+    Toggle button already exists; simply swap CSS classes:
+
+        is-playing → gold fill + note icon animated (slow pulse).
+
+        is-paused → ivory fill, static icon.
+
+    Add aria-pressed="true|false" + aria-label="Music on/off".
+
+Performance
+
+    Do not bundle the MP3; it streams from public/ only when play is requested.
+
+    Keep one global audio instance so playback continues across route changes.

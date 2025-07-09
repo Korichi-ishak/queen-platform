@@ -1,94 +1,16 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { PaperAirplaneIcon, InformationCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { InformationCircleIcon } from '@heroicons/react/24/outline';
 const TeaCeremonyTeaser = lazy(() => import('./TeaCeremonyTeaser'));
 
-const ChatPage = () => {
-  const [isTyping, setIsTyping] = useState(false);
-  const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const dialogRef = useRef<HTMLDivElement>(null);
+
+const TeaCeremonyPage = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    // Auto-open dialog after page load
-    const timer = setTimeout(() => {
-      setIsDialogOpen(true);
-    }, 300);
-
-    return () => clearTimeout(timer);
+    setIsOpen(true); 
   }, []);
-
-  useEffect(() => {
-    if (!isDialogOpen) return;
-
-    // Show typing indicator for 2 seconds, then show welcome message
-    const timer1 = setTimeout(() => {
-      setIsTyping(true);
-    }, 500);
-
-    const timer2 = setTimeout(() => {
-      setIsTyping(false);
-      setShowWelcomeMessage(true);
-    }, 2500);
-
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-    };
-  }, [isDialogOpen]);
-
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
-    setIsTyping(false);
-    setShowWelcomeMessage(false);
-  };
-
-  const TypingIndicator = () => (
-    <div className="flex items-center space-x-2 text-cabinet-aubergine/70">
-      <span className="text-sm font-sans">Reine-Mère tape...</span>
-      <div className="flex space-x-1">
-        <div className="w-2 h-2 bg-royal-gold rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-        <div className="w-2 h-2 bg-royal-gold rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-        <div className="w-2 h-2 bg-royal-gold rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-      </div>
-    </div>
-  );
-
-  if (!isDialogOpen) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="flex items-center justify-center first:pt-0 last:pb-0"
-      >
-        <div className="text-center mx-auto max-w-lg">
-          <div className="w-24 h-24 bg-gradient-to-br from-royal-gold to-royal-champagne rounded-full flex items-center justify-center mx-auto mb-6 shadow-golden">
-            <img 
-              src="/assets/images/logo-gold.webp" 
-              alt="Reine-Mère"
-              className="w-12 h-12 object-contain"
-            />
-          </div>
-          <h1 className="text-4xl font-serif font-bold text-royal-purple mb-4">
-            Salon de Thé Royal
-          </h1>
-          <p className="text-cabinet-aubergine/70 font-sans text-lg mb-8">
-            Rejoignez notre salon de thé virtuel pour des conversations inspirantes.
-          </p>
-          <button
-            onClick={() => setIsDialogOpen(true)}
-            className="bg-gradient-to-r from-royal-purple to-cabinet-aubergine text-royal-pearl px-8 py-3 rounded-lg font-sans font-medium hover:from-royal-purple/90 hover:to-cabinet-aubergine/90 transition-all duration-200 shadow-royal"
-          >
-            Entrer dans le salon
-          </button>
-        </div>
-      </motion.div>
-    );
-  }
-
+  
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -99,13 +21,6 @@ const ChatPage = () => {
     >
       <div className={`vignette-backdrop ${isOpen ? 'show' : ''}`} />
       
-      {/* This is a placeholder for the actual chat modal trigger */}
-      {!isOpen && (
-        <button onClick={() => setIsOpen(true)} className="p-4 bg-imperial-gold text-white rounded">
-          Open Tea Ceremony Chat
-        </button>
-      )}
-
       {isOpen && (
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -164,4 +79,4 @@ const ChatPage = () => {
   );
 };
 
-export default ChatPage;
+export default TeaCeremonyPage; 

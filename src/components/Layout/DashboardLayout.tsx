@@ -2,9 +2,13 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
+import { useBackgroundMusic } from '../../hooks/useBackgroundMusic';
 
 const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Initialize background music with auto-play enabled
+  useBackgroundMusic();
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-royal-pearl to-cabinet-parchment">

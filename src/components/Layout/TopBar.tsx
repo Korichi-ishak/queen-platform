@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Bars3Icon, 
@@ -9,6 +9,7 @@ import {
   PowerIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/AuthContext';
+import { useMusicPlayer } from '../../hooks/useMusicPlayer';
 
 interface TopBarProps {
   onMenuClick: () => void;
@@ -22,34 +23,18 @@ interface SpotsData {
 
 const TopBar = ({ onMenuClick }: TopBarProps) => {
   const { user, logout } = useAuth();
-  const [musicEnabled, setMusicEnabled] = useState(false);
+  const { isPlaying, isLoading, controls } = useMusicPlayer('/audio/Roie Shpigler - Marbles.mp3', { 
+    autoPlay: false, // TopBar doesn't trigger auto-play, just controls it
+    targetVolume: 0.10 
+  });
   const [spotsData] = useState<SpotsData>({
     available: 7,
     total: 20,
     nextEvent: "Tea Time — 13 juillet 19h GMT+1"
   });
 
-  // Auto-mute if user prefers reduced motion
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      if (e.matches) {
-        setMusicEnabled(false);
-      }
-    };
-    
-    if (mediaQuery.matches) {
-      setMusicEnabled(false);
-    }
-    
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
-
   const handleMusicToggle = () => {
-    setMusicEnabled(!musicEnabled);
-    // In a real app, this would control actual audio playback
-    console.log(musicEnabled ? 'Music paused' : 'Music playing');
+    controls.toggle();
   };
 
   return (
@@ -96,14 +81,22 @@ const TopBar = ({ onMenuClick }: TopBarProps) => {
               whileTap={{ scale: 0.95 }}
               onClick={handleMusicToggle}
               className={`p-3 rounded-full transition-all duration-200 ${
-                musicEnabled 
+                isPlaying 
                   ? 'bg-gradient-to-r from-royal-gold/20 to-royal-champagne/20 text-royal-gold border border-royal-gold/30' 
                   : 'bg-royal-purple/10 text-royal-purple hover:bg-royal-purple/20'
               }`}
-              title={musicEnabled ? 'Pause music' : 'Play music'}
+              title={isPlaying ? 'Pause music' : 'Play music'}
+              aria-pressed={isPlaying}
+              aria-label={isPlaying ? 'Music on' : 'Music off'}
+              disabled={isLoading}
             >
-              {musicEnabled ? (
-                <MusicalNoteIcon className="w-5 h-5" />
+              {isPlaying ? (
+                <motion.div
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <MusicalNoteIcon className="w-5 h-5" />
+                </motion.div>
               ) : (
                 <SpeakerXMarkIcon className="w-5 h-5" />
               )}
