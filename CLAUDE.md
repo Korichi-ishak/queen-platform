@@ -363,3 +363,62 @@ plugins: [
         Keep CSS colours in the extended Tailwind palette; do not introduce new hex values.
 
         No back-end calls—everything local.
+
+
+        # New “How to use your cards” — Storyboard Carousel : "
+
+Purpose
+Replace the static bullet panel with a lightweight, illustrated carousel that visually teaches the four key actions: Explore, 3-Card Spread, Journal, Progress.
+Visual design
+
+    Width: max-w-5xl mx-auto, centred below the masonry grid, mt-20.
+
+    Each slide = a postcard-style card 300 × 180 px: ivory background, rounded-xl, thin imperial-gold border, soft drop-shadow.
+
+    Illustration (SVG) on the left 40 %, text on the right 60 %.
+
+    Title line: Playfair 600 royal-purple (#3B1E50).
+
+    Caption line: Inter 400, 14 px, rose-champagne (#D4B5A5). Bilingual: FR / EN on the same line.
+
+Carousel behaviour
+
+    Use a light lib (Keen-slider or Swiper) but lazy-load it only when the section enters viewport (IntersectionObserver).
+
+    4 slides auto-scroll every 6 s; pause on hover/focus.
+
+    Dots navigation under the strip; keyboard-accessible.
+
+    Loop enabled; slide width snaps so one full card is always visible on mobile, two on tablet, four on desktop.
+
+Slide content
+
+\| Slide | Illustration file | Title FR / EN | Caption FR / EN |
+
+> \|-------|-------------------|---------------|-----------------|
+> \| 1 | `explore.svg` | **Explorer / Explore** | “Clique sur une carte pour révéler son message / Click a card to reveal its message.” |
+> \| 2 | `spread.svg` | **Tirage / Spread** | “Utilise le tirage 3 cartes pour une méditation guidée / Use the 3-card spread for guided reflection.” |
+> \| 3 | `journal.svg` | **Journale / Journal** | “Ajoute la question miroir à ton journal / Add the mirror question to your journal.” |
+> \| 4 | `progress.svg` | **Progresser / Progress** | “Débloque des célébrations en découvrant plus de cartes / Unlock celebrations as you reveal more cards.” |
+
+Micro-interactions
+
+    On first appearance, slide #1 pulses once (animate-ping on border) to draw attention.
+
+    Respect prefers-reduced-motion: disable auto-scroll, keep manual nav only.
+
+    Each illustration SVG coloured via currentColor so dark-mode theming later is trivial.
+
+Accessibility
+
+    <section role="region" aria-label="How to use your cards">
+
+    Dots = <button aria-label="Go to slide 2">.
+
+    Ensure focus ring is visible (focus:ring-2 ring-imperialGold/60).
+
+Definition of done
+
+    Carousel renders beneath the grid, works on all breakpoints, passes Axe-core.
+
+    No impact on Lighthouse perf (> 90)."

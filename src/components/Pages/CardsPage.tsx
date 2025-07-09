@@ -6,15 +6,12 @@ import {
   XMarkIcon, 
   FunnelIcon, 
   MagnifyingGlassIcon,
-  BookOpenIcon,
-  ShareIcon,
-  SparklesIcon,
   ArrowPathIcon,
   PlayIcon
 } from '@heroicons/react/24/outline';
 import Tilt from 'react-parallax-tilt';
-import { useMediaQuery } from 'react-responsive';
 import { Dialog, Transition } from '@headlessui/react';
+import CardInstructionCarousel from '../UI/CardInstructionCarousel';
 
 gsap.registerPlugin(Flip);
 
@@ -143,7 +140,6 @@ const MILESTONES = [10, 25, 54];
 
 const CardsPage = () => {
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
-  const [isAnimating, setIsAnimating] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -328,7 +324,7 @@ const CardsPage = () => {
 
   // Handle card click
   const handleCardClick = (card: Card) => {
-    if (isAnimating || spreadMode) return;
+    if (spreadMode) return;
     
     markCardOpened(card.id);
     setSelectedCard(card);
@@ -336,13 +332,12 @@ const CardsPage = () => {
 
   // Handle close card
   const handleCloseCard = () => {
-    if (isAnimating) return;
     setSelectedCard(null);
   };
 
   // 3-card spread animation
   const trigger3CardSpread = () => {
-    if (prefersReducedMotion || isAnimating) return;
+    if (prefersReducedMotion) return;
     
     const randomCards = [...filteredCards]
       .sort(() => 0.5 - Math.random())
@@ -850,110 +845,10 @@ const CardsPage = () => {
         </div>
       )}
 
-      {/* Instructions Panel */}
-      <InstructionPanel />
+      {/* Instructions Carousel */}
+      <CardInstructionCarousel />
     </motion.div>
   );
 };
-
-const InstructionPanel = () => {
-  const prefersReducedMotion = useMediaQuery({ query: '(prefers-reduced-motion: reduce)' });
-
-  const instructions = [
-    {
-      icon: '/assets/illustrations/cards.svg',
-      title: 'Explorer / Explore',
-      subtitle: 'Découvrez votre essence',
-      description: 'Cliquez sur une carte pour révéler son message et sa question miroir, une introspection guidée.',
-      ariaLabel: 'Explorer - découvrez comment explorer vos cartes'
-    },
-    {
-      icon: '/assets/illustrations/journal.svg',
-      title: 'Journaler / Journal',
-      subtitle: 'Consignez vos réflexions',
-      description: 'Ajoutez les questions qui vous inspirent à votre journal d\'âme personnel pour une analyse plus profonde.',
-      ariaLabel: 'Journaler - découvrez comment utiliser votre journal'
-    },
-    {
-      icon: '/assets/illustrations/sparkles.svg',
-      title: 'Tirage / Spread',
-      subtitle: 'Obtenez une vue d\'ensemble',
-      description: 'Utilisez le tirage à 3 cartes pour une méditation guidée sur votre situation actuelle.',
-      ariaLabel: 'Tirage - découvrez comment faire un tirage de cartes'
-    },
-    {
-      icon: '/assets/illustrations/crown.svg',
-      title: 'Progresser / Progress',
-      subtitle: 'Suivez votre parcours',
-      description: 'Débloquez des célébrations spéciales en explorant plus de cartes et en complétant votre collection.',
-      ariaLabel: 'Progresser - découvrez comment suivre votre progression'
-    }
-  ];
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: prefersReducedMotion ? 0 : 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: prefersReducedMotion ? 0 : 0.5
-      }
-    }
-  };
-
-  return (
-    <section className="mt-16 text-center" aria-labelledby="instruction-title">
-      <div className="relative bg-[#F9F5EF] rounded-2xl p-8 border border-royal-gold/20 max-w-5xl mx-auto overflow-hidden shadow-[inset_0_0_80px_40px_rgba(249,245,239,1)]">
-        <div className="relative z-10">
-          <h2 id="instruction-title" className="text-3xl font-serif font-bold text-royal-purple mb-4">
-            Comment utiliser vos cartes
-          </h2>
-          <p className="text-lg text-cabinet-aubergine/70 font-sans mb-8 max-w-2xl mx-auto">
-            Quatre étapes simples pour commencer votre voyage introspectif.
-          </p>
-          
-          <motion.div 
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
-          >
-            {instructions.map((item) => (
-              <motion.div key={item.title} variants={itemVariants}>
-                <button 
-                  className="w-full h-full text-left p-6 bg-royal-pearl/50 rounded-xl border border-royal-gold/40 shadow-inner-soft transition-all duration-300
-                             hover:-translate-y-0.5 hover:ring-2 hover:ring-royal-gold/40 focus:outline-none focus:-translate-y-0.5 focus:ring-2 focus:ring-royal-gold/40"
-                  aria-label={item.ariaLabel}
-                >
-                  <img src={item.icon} alt="" className="w-8 h-8 mb-4 text-royal-purple" />
-                  <h3 className="font-playfair font-bold text-royal-purple text-lg">
-                    {item.title}
-                  </h3>
-                  <h4 className="font-inter font-medium text-rose-champagne text-sm mb-3">
-                    {item.subtitle}
-                  </h4>
-                  <p className="font-inter text-sm text-cabinet-aubergine/90 line-clamp-3">
-                    {item.description}
-                  </p>
-                </button>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 export default CardsPage;

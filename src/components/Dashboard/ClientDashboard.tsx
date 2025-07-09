@@ -10,7 +10,7 @@ import {
 // Import des modules Queen de Q
 import RoyalShop from '../Modules/RoyalShop';
 import RoyalJournal from '../Modules/RoyalJournal';
-import EpicCardDraw from '../Modules/EpicCardDraw';
+import CardsPage from '../Pages/CardsPage';
 import TarotQuiz from '../Modules/TarotQuiz';
 import RoyalTeaSalon from '../Modules/RoyalTeaSalon';
 import GoldenParticles from '../Effects/GoldenParticles';
@@ -148,7 +148,7 @@ const ClientDashboard = ({ onLogout, userEmail }: ClientDashboardProps) => {
         );
       
       case 'cards':
-        return <EpicCardDraw />;
+        return <CardsPage />;
       
       case 'mirror':
         return <TarotQuiz />;

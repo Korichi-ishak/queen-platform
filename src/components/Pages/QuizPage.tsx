@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gsap } from 'gsap';
 import Tilt from 'react-parallax-tilt';
@@ -12,7 +12,8 @@ import {
   EyeIcon,
   ShieldCheckIcon,
   ArrowRightIcon,
-  ArrowLeftIcon 
+  ArrowLeftIcon,
+  StarIcon
 } from '@heroicons/react/24/outline';
 
 // Lazy load confetti
@@ -121,28 +122,28 @@ const quizQuestions: QuizQuestion[] = [
 
 const queenResults: { [key: string]: QuizResult } = {
   'Bienveillante': {
-    name: 'La Reine Bienveillante',
-    portrait: '/assets/images/logo-gold.webp',
-    description: 'Votre cœur rayonne de compassion. Vous êtes une source d\'amour et de réconfort pour tous ceux qui vous entourent.',
-    color: 'from-royal-champagne to-cabinet-powder'
+    name: 'La Reine Solaire',
+    portrait: '/assets/quiz-results/solar-queen.svg',
+    description: 'Votre énergie rayonne comme le soleil, illuminant tout sur votre passage. Vous êtes une source naturelle d\'inspiration et de chaleur humaine. Votre présence apporte joie et réconfort à ceux qui vous entourent.',
+    color: 'from-[#F5E6E9] to-[#FDF7F2]'
   },
   'Créative': {
-    name: 'L\'Impératrice Créative',
-    portrait: '/assets/images/logo-gold.webp',
-    description: 'Votre imagination n\'a pas de limites. Vous transformez le monde par votre art et votre créativité.',
-    color: 'from-royal-purple to-cabinet-aubergine'
+    name: 'L\'Impératrice Rebelle',
+    portrait: '/assets/quiz-results/rebel-queen.svg',
+    description: 'Votre esprit libre défie les conventions avec grâce et audace. Vous n\'avez pas peur de tracer votre propre chemin et d\'inspirer les autres à embrasser leur authenticité. Votre créativité révolutionnaire change le monde.',
+    color: 'from-[#E3BBB2] to-[#F5E6E9]'
   },
   'Sage': {
     name: 'La Souveraine Sage',
-    portrait: '/assets/images/logo-gold.webp',
-    description: 'Votre sagesse éclaire le chemin. Vous guidez les autres vers la vérité et la compréhension.',
-    color: 'from-ritual-smokedGold to-ritual-vintage'
+    portrait: '/assets/quiz-results/sage-queen.svg',
+    description: 'Votre sagesse profonde et votre intuition vous guident vers la vérité. Vous êtes une source de conseil et de guidance pour ceux qui cherchent des réponses. Votre connaissance éclaire le chemin des autres.',
+    color: 'from-[#C8A96B] to-[#F5E6E9]'
   },
   'Guerrière': {
-    name: 'La Reine Guerrière',
-    portrait: '/assets/images/logo-gold.webp',
-    description: 'Votre force intérieure est inébranlable. Vous surmontez tous les obstacles avec courage et détermination.',
-    color: 'from-ritual-indigo to-royal-purple'
+    name: 'La Reine Lunaire',
+    portrait: '/assets/quiz-results/lunar-queen.svg',
+    description: 'Votre force mystique puise dans les cycles naturels et l\'intuition féminine. Vous maîtrisez l\'art de la transformation et de l\'adaptation. Votre sagesse émotionnelle guide vos décisions avec une profondeur remarquable.',
+    color: 'from-[#D4B5A5] to-[#F9ECEF]'
   }
 };
 
@@ -153,6 +154,9 @@ const QuizPage = () => {
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [result, setResult] = useState<QuizResult | null>(null);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [confettiTriggered, setConfettiTriggered] = useState(false);
+  
+  const ariaLiveRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Check for reduced motion preference
@@ -168,22 +172,44 @@ const QuizPage = () => {
   }, []);
 
   useEffect(() => {
-    // Staggered icon reveal animation
+    // Staggered answer reveal animation
     if (!prefersReducedMotion) {
-      const icons = document.querySelectorAll('.quiz-option-icon');
-      gsap.fromTo(icons, 
-        { opacity: 0, scale: 0.8, rotateY: 90 },
+      const options = document.querySelectorAll('.quiz-option-card');
+      gsap.fromTo(options, 
+        { opacity: 0, y: 20, scale: 0.95 },
         { 
           opacity: 1, 
-          scale: 1, 
-          rotateY: 0,
-          duration: 0.6,
-          stagger: 0.12,
-          ease: "power2.out"
+          y: 0,
+          scale: 1,
+          duration: 0.5,
+          stagger: 0.08, // 80ms delay
+          ease: "cubic-bezier(0.25, 0.46, 0.45, 0.94)" // ease-out-cubic
         }
       );
     }
   }, [currentQuestion, prefersReducedMotion]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (showResult) return;
+      
+      const keyNumber = parseInt(e.key);
+      if (keyNumber >= 1 && keyNumber <= 4) {
+        const option = quizQuestions[currentQuestion]?.options[keyNumber - 1];
+        if (option) {
+          handleAnswerSelect(option.id);
+          // Update aria-live region
+          if (ariaLiveRef.current) {
+            ariaLiveRef.current.textContent = `Option ${keyNumber} selected: ${option.text}`;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentQuestion, showResult]);
 
   const handleAnswerSelect = (optionId: string) => {
     setSelectedAnswer(optionId);
@@ -215,22 +241,6 @@ const QuizPage = () => {
 
       setResult(queenResults[topArchetype]);
       setShowResult(true);
-      
-      // Trigger confetti with lazy loading
-      setTimeout(async () => {
-        try {
-          const confettiModule = await loadConfetti();
-          const confetti = confettiModule.default;
-          confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ['#D6AE60', '#D4B5A5', '#3B1E50', '#C8A96B']
-          });
-        } catch (error) {
-          console.log('Confetti could not be loaded:', error);
-        }
-      }, 500);
 
       // Track event (placeholder for Plausible)
       if (typeof window !== 'undefined' && (window as any).plausible) {
@@ -254,9 +264,51 @@ const QuizPage = () => {
     setSelectedAnswer('');
     setShowResult(false);
     setResult(null);
+    setConfettiTriggered(false);
   };
 
-  const progress = ((currentQuestion + 1) / quizQuestions.length) * 100;
+  const handleShareResult = async (result: QuizResult) => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Quiz Royal - ${result.name}`,
+          text: `Je suis ${result.name}! Découvrez votre archétype royal avec le Quiz Royal de Queen de Q.`,
+          url: window.location.href
+        });
+      } catch (error) {
+        console.log('Error sharing:', error);
+      }
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      const text = `Je suis ${result.name}! Découvrez votre archétype royal avec le Quiz Royal de Queen de Q. ${window.location.href}`;
+      navigator.clipboard.writeText(text);
+      alert('Résultat copié dans le presse-papiers!');
+    }
+  };
+
+  // Trigger confetti when result screen mounts
+  useEffect(() => {
+    if (showResult && !confettiTriggered && !prefersReducedMotion) {
+      setConfettiTriggered(true);
+      
+      setTimeout(async () => {
+        try {
+          const confettiModule = await loadConfetti();
+          const confetti = confettiModule.default;
+          confetti({
+            particleCount: 60,
+            spread: 60,
+            origin: { y: 0.7 },
+            colors: ['#D6AE60', '#D4B5A5', '#3B1E50', '#C8A96B'],
+            ticks: 200
+          });
+        } catch {
+          // Silently fail if confetti can't be loaded
+        }
+      }, 300);
+    }
+  }, [showResult, confettiTriggered, prefersReducedMotion]);
+
 
   if (showResult && result) {
     return (
@@ -265,40 +317,81 @@ const QuizPage = () => {
         animate={{ opacity: 1 }}
         className="flex flex-col items-center justify-center min-h-[80vh] text-center first:pt-0 last:pb-0"
       >
-        <div className={`bg-gradient-to-br ${result.color} rounded-3xl p-12 shadow-royal border border-royal-gold/30 max-w-2xl mx-auto mb-8`}>
+        <div className={`bg-gradient-to-br ${result.color} rounded-3xl p-12 shadow-royal border border-royal-gold/30 max-w-3xl mx-auto mb-8`}>
+          {/* Large Queen archetype illustration */}
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.6, type: "spring" }}
             className="mb-8"
           >
-            <div className="w-32 h-32 bg-gradient-to-br from-royal-gold to-royal-champagne rounded-full flex items-center justify-center mx-auto mb-6 shadow-golden">
+            <div className="w-48 h-48 mx-auto mb-6 flex items-center justify-center">
               <img 
                 src={result.portrait} 
                 alt={result.name}
-                className="w-20 h-20 object-cover rounded-full"
+                className="w-full h-full object-contain"
               />
             </div>
           </motion.div>
           
+          {/* Headline */}
           <motion.h1
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="text-4xl font-serif font-bold text-royal-pearl mb-6"
+            className="text-4xl lg:text-5xl font-serif font-bold text-royal-purple mb-6"
           >
-            {result.name}
+            Vous êtes {result.name}
           </motion.h1>
+
+          {/* Crown icon with bounce animation */}
+          <motion.div
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="flex justify-center mb-8"
+          >
+            <motion.div
+              animate={prefersReducedMotion ? {} : {
+                y: [0, -10, 0],
+                scale: [1, 1.1, 1]
+              }}
+              transition={{
+                duration: 0.6,
+                delay: 0.6,
+                ease: "easeOut"
+              }}
+              className="w-12 h-12 bg-royal-gold/20 rounded-full flex items-center justify-center"
+            >
+              <StarIcon className="w-6 h-6 text-royal-purple" />
+            </motion.div>
+          </motion.div>
           
-          <motion.p
+          {/* 3-line description */}
+          <motion.div
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="text-royal-pearl/90 font-sans text-lg leading-relaxed mb-8"
+            className="mb-8"
           >
-            {result.description}
-          </motion.p>
+            <p className="text-royal-purple/90 font-sans text-lg leading-relaxed max-w-2xl mx-auto">
+              {result.description}
+            </p>
+          </motion.div>
+
+          {/* Mirror affirmation */}
+          <motion.div
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="mb-8"
+          >
+            <p className="text-[#D4B5A5] font-sans text-lg italic">
+              "Vous portez en vous la force et la beauté de votre archétype royal."
+            </p>
+          </motion.div>
           
+          {/* CTA Buttons */}
           <motion.div
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -306,8 +399,20 @@ const QuizPage = () => {
             className="flex flex-wrap gap-4 justify-center"
           >
             <button
+              onClick={() => handleShareResult(result)}
+              className="bg-gradient-to-r from-royal-gold/20 to-royal-champagne/20 border border-royal-gold/30 rounded-full px-8 py-3 text-royal-purple font-sans font-medium hover:from-royal-gold/30 hover:to-royal-champagne/30 transition-all duration-200"
+            >
+              Partager mon résultat
+            </button>
+            <button
+              onClick={() => window.location.href = '/cards'}
+              className="bg-gradient-to-r from-royal-purple/20 to-cabinet-aubergine/20 border border-royal-purple/30 rounded-full px-8 py-3 text-royal-purple font-sans font-medium hover:from-royal-purple/30 hover:to-cabinet-aubergine/30 transition-all duration-200"
+            >
+              Explorer vos cartes
+            </button>
+            <button
               onClick={handleRestart}
-              className="bg-gradient-to-r from-royal-gold/20 to-royal-champagne/20 border border-royal-gold/30 rounded-full px-8 py-3 text-royal-pearl font-sans font-medium hover:from-royal-gold/30 hover:to-royal-champagne/30 transition-all duration-200"
+              className="bg-gradient-to-r from-cabinet-aubergine/20 to-royal-purple/20 border border-cabinet-aubergine/30 rounded-full px-8 py-3 text-cabinet-aubergine font-sans font-medium hover:from-cabinet-aubergine/30 hover:to-royal-purple/30 transition-all duration-200"
             >
               Recommencer
             </button>
@@ -324,11 +429,68 @@ const QuizPage = () => {
       transition={{ duration: 0.6 }}
       className="first:pt-0 last:pb-0"
     >
+      {/* Aria-live region for keyboard selections */}
+      <div
+        ref={ariaLiveRef}
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      />
+    
       {/* Header */}
       <div className="text-center mb-12 lg:mb-16">
-        <h1 className="text-4xl lg:text-5xl font-serif font-bold text-royal-purple mb-4">
-          Quiz Royal
-        </h1>
+        <div className="flex items-center justify-center gap-4 mb-4">
+          <h1 className="text-4xl lg:text-5xl font-serif font-bold text-royal-purple">
+            Quiz Royal
+          </h1>
+          
+          {/* Circular Progress Badge */}
+          <div className="relative group">
+            <div 
+              className="w-10 h-10 cursor-help"
+              title={`${currentQuestion + 1} / ${quizQuestions.length} completed`}
+            >
+              <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 40 40">
+                {/* Background circle */}
+                <circle
+                  cx="20"
+                  cy="20"
+                  r="16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  className="text-royal-gold/20"
+                />
+                {/* Progress circle */}
+                <motion.circle
+                  cx="20"
+                  cy="20"
+                  r="16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  className="text-royal-gold"
+                  initial={{ strokeDasharray: "0 100.53" }}
+                  animate={{ 
+                    strokeDasharray: `${((currentQuestion + 1) / quizQuestions.length) * 100.53} 100.53`
+                  }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-royal-purple font-sans font-bold text-xs">
+                  {currentQuestion + 1}
+                </span>
+              </div>
+            </div>
+            
+            {/* Tooltip */}
+            <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-royal-velvet text-royal-pearl text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+              {currentQuestion + 1} / {quizQuestions.length} completed
+            </div>
+          </div>
+        </div>
         <p className="text-cabinet-aubergine/70 font-sans text-lg max-w-2xl mx-auto">
           Découvrez votre archétype royal en 8 questions. Laissez votre intuition vous guider vers votre véritable essence.
         </p>
@@ -364,16 +526,29 @@ const QuizPage = () => {
           transition={{ duration: 0.5 }}
           className="max-w-4xl mx-auto"
         >
-          <div className="bg-gradient-to-r from-royal-pearl to-royal-champagne/30 rounded-2xl p-8 border border-royal-gold/20 mb-8">
-            <h2 className="text-2xl font-serif font-bold text-royal-purple text-center mb-8">
+          <div className="bg-gradient-to-r from-[#F5E6E9] to-[#FDF7F2] rounded-2xl p-8 border border-royal-gold/20 mb-8">
+            <h2 id="question-title" className="text-2xl font-serif font-bold text-royal-purple text-center mb-8">
               {quizQuestions[currentQuestion].question}
             </h2>
 
             {/* Options Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div 
+              className="grid grid-cols-2 lg:grid-cols-4 gap-8"
+              role="radiogroup"
+              aria-labelledby="question-title"
+            >
               {quizQuestions[currentQuestion].options.map((option, index) => {
-                const Icon = option.icon;
                 const isSelected = selectedAnswer === option.id;
+                const iconMap: { [key: string]: string } = {
+                  'HeartIcon': '/assets/quiz-icons/heart.svg',
+                  'SparklesIcon': '/assets/quiz-icons/sparkles.svg',
+                  'SunIcon': '/assets/quiz-icons/sun.svg',
+                  'MoonIcon': '/assets/quiz-icons/moon.svg',
+                  'FireIcon': '/assets/quiz-icons/fire.svg',
+                  'BeakerIcon': '/assets/quiz-icons/beaker.svg',
+                  'EyeIcon': '/assets/quiz-icons/eye.svg',
+                  'ShieldCheckIcon': '/assets/quiz-icons/shield.svg'
+                };
                 
                 return (
                   <Tilt
@@ -384,26 +559,43 @@ const QuizPage = () => {
                     perspective={1000}
                   >
                     <motion.button
-                      className={`quiz-option-icon relative p-6 rounded-xl transition-all duration-300 border-2 group ${
+                      className={`quiz-option-card relative p-6 rounded-2xl transition-all duration-300 border group ${
                         isSelected
-                          ? 'bg-gradient-to-br from-royal-gold/30 to-royal-champagne/30 border-royal-gold text-royal-purple shadow-golden'
-                          : 'bg-gradient-to-br from-royal-pearl to-cabinet-parchment border-royal-gold/20 text-cabinet-aubergine hover:border-royal-gold/40 hover:from-royal-gold/10 hover:to-royal-champagne/10'
-                      }`}
+                          ? 'bg-gradient-to-br from-[#F9ECEF] to-[#FDF7F2] border-royal-gold text-royal-purple shadow-inner-soft'
+                          : 'bg-gradient-to-br from-[#F5E6E9] to-[#FDF7F2] border-royal-gold/30 text-cabinet-aubergine hover:border-royal-gold/60 hover:bg-gradient-to-br hover:from-[#F9ECEF] hover:to-[#FDF7F2]'
+                      } ${!prefersReducedMotion ? 'hover:quiz-option-sparkle' : ''}`}
                       onClick={() => handleAnswerSelect(option.id)}
                       whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
+                      role="radio"
+                      aria-checked={isSelected}
+                      aria-labelledby={`option-${option.id}`}
                     >
+                      {/* Keyboard number indicator - Gold tab */}
+                      <div className="absolute -top-2 -left-2 w-6 h-6 bg-royal-gold rounded-full flex items-center justify-center shadow-soft">
+                        <span className="text-royal-purple font-sans font-bold text-xs">
+                          {index + 1}
+                        </span>
+                      </div>
+
                       <div className="flex flex-col items-center space-y-4">
                         <div className={`p-4 rounded-full transition-all duration-300 ${
                           isSelected 
-                            ? 'bg-gradient-to-br from-royal-gold to-royal-champagne text-royal-purple' 
-                            : 'bg-gradient-to-br from-royal-purple/10 to-cabinet-aubergine/10 group-hover:from-royal-gold/20 group-hover:to-royal-champagne/20'
+                            ? 'bg-royal-gold/20 backdrop-blur-sm' 
+                            : 'bg-white/30 backdrop-blur-sm group-hover:bg-royal-gold/10'
                         }`}>
-                          <Icon className="w-8 h-8" />
+                          <img 
+                            src={iconMap[option.icon.name] || '/assets/quiz-icons/heart.svg'} 
+                            alt=""
+                            className="w-8 h-8"
+                          />
                         </div>
-                        <span className={`font-sans font-medium transition-colors ${
-                          isSelected ? 'text-royal-purple' : 'text-cabinet-aubergine'
-                        }`}>
+                        <span 
+                          id={`option-${option.id}`}
+                          className={`font-sans font-medium transition-colors text-center leading-tight ${
+                            isSelected ? 'text-royal-purple' : 'text-cabinet-aubergine'
+                          }`}
+                        >
                           {option.text}
                         </span>
                       </div>
@@ -412,7 +604,7 @@ const QuizPage = () => {
                         <motion.div
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-royal-gold rounded-full flex items-center justify-center"
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-royal-gold rounded-full flex items-center justify-center shadow-soft"
                         >
                           <div className="w-2 h-2 bg-royal-purple rounded-full"></div>
                         </motion.div>
