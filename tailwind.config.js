@@ -45,6 +45,19 @@ export default {
           800: '#1B1B1B',
           900: '#181818',
         },
+        // Additional color tokens for ChatPage
+        'parchment-cream': '#F5EBD6',
+        'warm-pearl': '#FDF7F2',
+        'powder-rose': '#E8C5C1',
+        'antique-rose': '#E3BBB2',
+        'moon-milk': '#FFF9F3',
+        'amber-smoke': '#776650',
+        'patina-gold': '#B79D74',
+        'smoky-gold': '#C8A96B',
+        'velvet-black': '#1B1B1B',
+        'rose-champagne': '#D4B5A5',
+        'imperial-gold': '#D6AE60',
+        'vintage-aubergine': '#4B2E43',
       },
       // Queen de Q Typography
       fontFamily: {
@@ -53,6 +66,9 @@ export default {
         'quote': ['"Playfair Display"', 'serif'],
         'sans': ['"Raleway"', 'system-ui', 'sans-serif'],
         'serif': ['"Playfair Display"', 'Georgia', 'serif'],
+        'handwriting': ['"Kalam"', 'cursive'],
+        'playfair': ['"Playfair Display"', 'serif'],
+        'raleway': ['"Raleway"', 'sans-serif'],
       },
       // Gradient backgrounds
       backgroundImage: {
@@ -70,11 +86,12 @@ export default {
       },
       // Animations mystiques
       animation: {
-        'float': 'float 3s ease-in-out infinite',
+        'float': 'float 6s ease-in-out infinite',
         'glow': 'glow 2s ease-in-out infinite alternate',
         'sparkle': 'sparkle 1.5s ease-in-out infinite',
         'fade-in': 'fadeIn 0.8s ease-out',
         'slide-up': 'slideUp 0.6s ease-out',
+        'steam': 'steam 4s ease-in-out infinite',
       },
       keyframes: {
         float: {
@@ -96,6 +113,11 @@ export default {
         slideUp: {
           '0%': { transform: 'translateY(30px)', opacity: 0 },
           '100%': { transform: 'translateY(0)', opacity: 1 },
+        },
+        steam: {
+          '0%': { opacity: 0, transform: 'translateY(6px)' },
+          '50%': { opacity: 1, transform: 'translateY(-6px)' },
+          '100%': { opacity: 0, transform: 'translateY(-12px)' },
         },
       },
     },

@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gsap } from 'gsap';
-import Tilt from 'react-parallax-tilt';
 import { 
   HeartIcon, 
   SparklesIcon, 
@@ -125,25 +124,25 @@ const queenResults: { [key: string]: QuizResult } = {
     name: 'La Reine Solaire',
     portrait: '/assets/quiz-results/solar-queen.svg',
     description: 'Votre énergie rayonne comme le soleil, illuminant tout sur votre passage. Vous êtes une source naturelle d\'inspiration et de chaleur humaine. Votre présence apporte joie et réconfort à ceux qui vous entourent.',
-    color: 'from-[#F5E6E9] to-[#FDF7F2]'
+    color: 'from-parchment-cream to-warm-pearl'
   },
   'Créative': {
     name: 'L\'Impératrice Rebelle',
     portrait: '/assets/quiz-results/rebel-queen.svg',
     description: 'Votre esprit libre défie les conventions avec grâce et audace. Vous n\'avez pas peur de tracer votre propre chemin et d\'inspirer les autres à embrasser leur authenticité. Votre créativité révolutionnaire change le monde.',
-    color: 'from-[#E3BBB2] to-[#F5E6E9]'
+    color: 'from-antique-rose to-powder-rose'
   },
   'Sage': {
     name: 'La Souveraine Sage',
     portrait: '/assets/quiz-results/sage-queen.svg',
     description: 'Votre sagesse profonde et votre intuition vous guident vers la vérité. Vous êtes une source de conseil et de guidance pour ceux qui cherchent des réponses. Votre connaissance éclaire le chemin des autres.',
-    color: 'from-[#C8A96B] to-[#F5E6E9]'
+    color: 'from-smoky-gold to-parchment-cream'
   },
   'Guerrière': {
     name: 'La Reine Lunaire',
     portrait: '/assets/quiz-results/lunar-queen.svg',
     description: 'Votre force mystique puise dans les cycles naturels et l\'intuition féminine. Vous maîtrisez l\'art de la transformation et de l\'adaptation. Votre sagesse émotionnelle guide vos décisions avec une profondeur remarquable.',
-    color: 'from-[#D4B5A5] to-[#F9ECEF]'
+    color: 'from-rose-champagne to-moon-milk'
   }
 };
 
@@ -157,6 +156,14 @@ const QuizPage = () => {
   const [confettiTriggered, setConfettiTriggered] = useState(false);
   
   const ariaLiveRef = useRef<HTMLDivElement>(null);
+
+  // Note colors and rotations for the manuscript style
+  const noteStyles = [
+    { color: 'from-parchment-cream to-warm-pearl', borderColor: 'border-patina-gold', rotation: 'rotate-1' },
+    { color: 'from-powder-rose to-antique-rose', borderColor: 'border-rose-champagne', rotation: '-rotate-1' },
+    { color: 'from-moon-milk to-powder-rose', borderColor: 'border-smoky-gold', rotation: 'rotate-2' },
+    { color: 'from-vintage-aubergine/10 to-royal-purple/10', borderColor: 'border-imperial-gold', rotation: '-rotate-2' }
+  ];
 
   useEffect(() => {
     // Check for reduced motion preference
@@ -174,16 +181,16 @@ const QuizPage = () => {
   useEffect(() => {
     // Staggered answer reveal animation
     if (!prefersReducedMotion) {
-      const options = document.querySelectorAll('.quiz-option-card');
+      const options = document.querySelectorAll('.quiz-note-option');
       gsap.fromTo(options, 
-        { opacity: 0, y: 20, scale: 0.95 },
+        { opacity: 0, y: 50, rotateX: -15 },
         { 
           opacity: 1, 
           y: 0,
-          scale: 1,
-          duration: 0.5,
-          stagger: 0.08, // 80ms delay
-          ease: "cubic-bezier(0.25, 0.46, 0.45, 0.94)" // ease-out-cubic
+          rotateX: 0,
+          duration: 0.8,
+          stagger: 0.12,
+          ease: "easeOut"
         }
       );
     }
@@ -199,7 +206,6 @@ const QuizPage = () => {
         const option = quizQuestions[currentQuestion]?.options[keyNumber - 1];
         if (option) {
           handleAnswerSelect(option.id);
-          // Update aria-live region
           if (ariaLiveRef.current) {
             ariaLiveRef.current.textContent = `Option ${keyNumber} selected: ${option.text}`;
           }
@@ -243,8 +249,8 @@ const QuizPage = () => {
       setShowResult(true);
 
       // Track event (placeholder for Plausible)
-      if (typeof window !== 'undefined' && (window as any).plausible) {
-        (window as any).plausible('quiz_finished', {
+      if (typeof window !== 'undefined' && (window as unknown as { plausible?: Function }).plausible) {
+        (window as unknown as { plausible: Function }).plausible('quiz_finished', {
           props: { result: topArchetype }
         });
       }
@@ -279,7 +285,6 @@ const QuizPage = () => {
         console.log('Error sharing:', error);
       }
     } else {
-      // Fallback for browsers that don't support Web Share API
       const text = `Je suis ${result.name}! Découvrez votre archétype royal avec le Quiz Royal de Queen de Q. ${window.location.href}`;
       navigator.clipboard.writeText(text);
       alert('Résultat copié dans le presse-papiers!');
@@ -309,338 +314,385 @@ const QuizPage = () => {
     }
   }, [showResult, confettiTriggered, prefersReducedMotion]);
 
-
   if (showResult && result) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex flex-col items-center justify-center min-h-[80vh] text-center first:pt-0 last:pb-0"
-      >
-        <div className={`bg-gradient-to-br ${result.color} rounded-3xl p-12 shadow-royal border border-royal-gold/30 max-w-3xl mx-auto mb-8`}>
-          {/* Large Queen archetype illustration */}
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.6, type: "spring" }}
-            className="mb-8"
-          >
-            <div className="w-48 h-48 mx-auto mb-6 flex items-center justify-center">
-              <img 
-                src={result.portrait} 
-                alt={result.name}
-                className="w-full h-full object-contain"
-              />
-            </div>
-          </motion.div>
-          
-          {/* Headline */}
-          <motion.h1
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="text-4xl lg:text-5xl font-serif font-bold text-royal-purple mb-6"
-          >
-            Vous êtes {result.name}
-          </motion.h1>
-
-          {/* Crown icon with bounce animation */}
-          <motion.div
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="flex justify-center mb-8"
-          >
-            <motion.div
-              animate={prefersReducedMotion ? {} : {
-                y: [0, -10, 0],
-                scale: [1, 1.1, 1]
-              }}
-              transition={{
-                duration: 0.6,
-                delay: 0.6,
-                ease: "easeOut"
-              }}
-              className="w-12 h-12 bg-royal-gold/20 rounded-full flex items-center justify-center"
-            >
-              <StarIcon className="w-6 h-6 text-royal-purple" />
-            </motion.div>
-          </motion.div>
-          
-          {/* 3-line description */}
-          <motion.div
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mb-8"
-          >
-            <p className="text-royal-purple/90 font-sans text-lg leading-relaxed max-w-2xl mx-auto">
-              {result.description}
-            </p>
-          </motion.div>
-
-          {/* Mirror affirmation */}
-          <motion.div
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="mb-8"
-          >
-            <p className="text-[#D4B5A5] font-sans text-lg italic">
-              "Vous portez en vous la force et la beauté de votre archétype royal."
-            </p>
-          </motion.div>
-          
-          {/* CTA Buttons */}
-          <motion.div
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.7 }}
-            className="flex flex-wrap gap-4 justify-center"
-          >
-            <button
-              onClick={() => handleShareResult(result)}
-              className="bg-gradient-to-r from-royal-gold/20 to-royal-champagne/20 border border-royal-gold/30 rounded-full px-8 py-3 text-royal-purple font-sans font-medium hover:from-royal-gold/30 hover:to-royal-champagne/30 transition-all duration-200"
-            >
-              Partager mon résultat
-            </button>
-            <button
-              onClick={() => window.location.href = '/cards'}
-              className="bg-gradient-to-r from-royal-purple/20 to-cabinet-aubergine/20 border border-royal-purple/30 rounded-full px-8 py-3 text-royal-purple font-sans font-medium hover:from-royal-purple/30 hover:to-cabinet-aubergine/30 transition-all duration-200"
-            >
-              Explorer vos cartes
-            </button>
-            <button
-              onClick={handleRestart}
-              className="bg-gradient-to-r from-cabinet-aubergine/20 to-royal-purple/20 border border-cabinet-aubergine/30 rounded-full px-8 py-3 text-cabinet-aubergine font-sans font-medium hover:from-cabinet-aubergine/30 hover:to-royal-purple/30 transition-all duration-200"
-            >
-              Recommencer
-            </button>
-          </motion.div>
+      <main className="min-h-screen relative overflow-hidden">
+        {/* Vintage Paper Texture Background */}
+        <div className="absolute inset-0 opacity-30" 
+             style={{
+               backgroundImage: `
+                 radial-gradient(circle at 20% 80%, rgba(75, 46, 67, 0.1) 0%, transparent 50%),
+                 radial-gradient(circle at 80% 20%, rgba(214, 174, 96, 0.1) 0%, transparent 50%),
+                 radial-gradient(circle at 40% 40%, rgba(212, 181, 165, 0.1) 0%, transparent 50%)
+               `
+             }}>
         </div>
-      </motion.div>
+
+        {/* Floating elements */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-20 left-10 text-4xl animate-float opacity-30" style={{ color: '#776650' }}>👑</div>
+          <div className="absolute top-40 right-20 text-3xl animate-float opacity-40" style={{ color: '#C8A96B', animationDelay: '1s' }}>✨</div>
+          <div className="absolute top-60 left-1/4 text-2xl animate-float opacity-25" style={{ color: '#B79D74', animationDelay: '2s' }}>🌟</div>
+          <div className="absolute bottom-40 right-1/3 text-3xl animate-float opacity-35" style={{ color: '#D4B5A5', animationDelay: '0.5s' }}>🔮</div>
+          <div className="absolute top-1/3 right-10 text-2xl animate-float opacity-30" style={{ color: '#776650', animationDelay: '1.5s' }}>📜</div>
+          <div className="absolute bottom-20 left-20 text-xl animate-float opacity-40" style={{ color: '#C8A96B', animationDelay: '2.5s' }}>💫</div>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="relative z-10 flex flex-col items-center justify-center min-h-screen text-center px-4 py-12"
+        >
+          <div className={`bg-gradient-to-br ${result.color} rounded-3xl p-12 shadow-royal border border-imperial-gold/30 max-w-3xl mx-auto mb-8 relative`}>
+            {/* Decorative corners */}
+            <div className="absolute -top-2 -left-2 w-4 h-4 border-l-2 border-t-2 border-imperial-gold"></div>
+            <div className="absolute -top-2 -right-2 w-4 h-4 border-r-2 border-t-2 border-imperial-gold"></div>
+            <div className="absolute -bottom-2 -left-2 w-4 h-4 border-l-2 border-b-2 border-imperial-gold"></div>
+            <div className="absolute -bottom-2 -right-2 w-4 h-4 border-l-2 border-b-2 border-imperial-gold"></div>
+
+            {/* Paper holes */}
+            <div className="absolute left-6 top-8 w-3 h-3 bg-warm-pearl rounded-full border border-patina-gold/50"></div>
+            <div className="absolute left-6 top-16 w-3 h-3 bg-warm-pearl rounded-full border border-patina-gold/50"></div>
+            <div className="absolute left-6 top-24 w-3 h-3 bg-warm-pearl rounded-full border border-patina-gold/50"></div>
+
+            {/* Large Queen archetype illustration */}
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.6, type: "spring" }}
+              className="mb-8"
+            >
+              <div className="w-48 h-48 mx-auto mb-6 flex items-center justify-center">
+                <img 
+                  src={result.portrait} 
+                  alt={result.name}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            </motion.div>
+            
+            {/* Headline */}
+            <motion.h1
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="text-4xl lg:text-5xl font-playfair font-bold text-royal-purple mb-6"
+            >
+              Vous êtes {result.name}
+            </motion.h1>
+
+            {/* Crown icon with bounce animation */}
+            <motion.div
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="flex justify-center mb-8"
+            >
+              <motion.div
+                animate={prefersReducedMotion ? {} : {
+                  y: [0, -10, 0],
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{
+                  duration: 0.6,
+                  delay: 0.6,
+                  ease: "easeOut"
+                }}
+                className="w-12 h-12 bg-imperial-gold/20 rounded-full flex items-center justify-center"
+              >
+                <StarIcon className="w-6 h-6 text-royal-purple" />
+              </motion.div>
+            </motion.div>
+            
+            {/* Description */}
+            <motion.div
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="mb-8"
+            >
+              <p className="text-royal-purple/90 font-raleway text-lg leading-relaxed max-w-2xl mx-auto">
+                {result.description}
+              </p>
+            </motion.div>
+
+            {/* Mirror affirmation */}
+            <motion.div
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="mb-8"
+            >
+              <p className="text-imperial-gold font-handwriting text-lg italic" style={{ fontFamily: 'Kalam, cursive' }}>
+                "Vous portez en vous la force et la beauté de votre archétype royal."
+              </p>
+            </motion.div>
+            
+            {/* CTA Buttons */}
+            <motion.div
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.7 }}
+              className="flex flex-wrap gap-4 justify-center"
+            >
+              <button
+                onClick={() => handleShareResult(result)}
+                className="bg-gradient-to-r from-imperial-gold/20 to-rose-champagne/20 border border-imperial-gold/30 rounded-full px-8 py-3 text-royal-purple font-raleway font-medium hover:from-imperial-gold/30 hover:to-rose-champagne/30 transition-all duration-200"
+              >
+                Partager mon résultat
+              </button>
+              <button
+                onClick={() => window.location.href = '/cards'}
+                className="bg-gradient-to-r from-royal-purple/20 to-vintage-aubergine/20 border border-royal-purple/30 rounded-full px-8 py-3 text-royal-purple font-raleway font-medium hover:from-royal-purple/30 hover:to-vintage-aubergine/30 transition-all duration-200"
+              >
+                Explorer vos cartes
+              </button>
+              <button
+                onClick={handleRestart}
+                className="bg-gradient-to-r from-vintage-aubergine/20 to-royal-purple/20 border border-vintage-aubergine/30 rounded-full px-8 py-3 text-vintage-aubergine font-raleway font-medium hover:from-vintage-aubergine/30 hover:to-royal-purple/30 transition-all duration-200"
+              >
+                Recommencer
+              </button>
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* Add Kalam font for handwriting effect */}
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap');
+        `}</style>
+      </main>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="first:pt-0 last:pb-0"
-    >
-      {/* Aria-live region for keyboard selections */}
-      <div
-        ref={ariaLiveRef}
-        aria-live="polite"
-        aria-atomic="true"
-        className="sr-only"
-      />
-    
-      {/* Header */}
-      <div className="text-center mb-12 lg:mb-16">
-        <div className="flex items-center justify-center gap-4 mb-4">
-          <h1 className="text-4xl lg:text-5xl font-serif font-bold text-royal-purple">
-            Quiz Royal
-          </h1>
-          
-          {/* Circular Progress Badge */}
-          <div className="relative group">
-            <div 
-              className="w-10 h-10 cursor-help"
-              title={`${currentQuestion + 1} / ${quizQuestions.length} completed`}
-            >
-              <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 40 40">
-                {/* Background circle */}
-                <circle
-                  cx="20"
-                  cy="20"
-                  r="16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  className="text-royal-gold/20"
-                />
-                {/* Progress circle */}
-                <motion.circle
-                  cx="20"
-                  cy="20"
-                  r="16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  className="text-royal-gold"
-                  initial={{ strokeDasharray: "0 100.53" }}
-                  animate={{ 
-                    strokeDasharray: `${((currentQuestion + 1) / quizQuestions.length) * 100.53} 100.53`
-                  }}
-                  transition={{ duration: 0.5, ease: "easeOut" }}
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-royal-purple font-sans font-bold text-xs">
-                  {currentQuestion + 1}
-                </span>
+    <main className="min-h-screen relative overflow-hidden">
+      {/* Vintage Paper Texture Background */}
+      <div className="absolute inset-0 opacity-30" 
+           style={{
+             backgroundImage: `
+               radial-gradient(circle at 20% 80%, rgba(75, 46, 67, 0.1) 0%, transparent 50%),
+               radial-gradient(circle at 80% 20%, rgba(214, 174, 96, 0.1) 0%, transparent 50%),
+               radial-gradient(circle at 40% 40%, rgba(212, 181, 165, 0.1) 0%, transparent 50%)
+             `
+           }}>
+      </div>
+
+      {/* Floating Quiz Elements */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 left-10 text-4xl animate-float opacity-30" style={{ color: '#776650' }}>📝</div>
+        <div className="absolute top-40 right-20 text-3xl animate-float opacity-40" style={{ color: '#C8A96B', animationDelay: '1s' }}>✨</div>
+        <div className="absolute top-60 left-1/4 text-2xl animate-float opacity-25" style={{ color: '#B79D74', animationDelay: '2s' }}>🌟</div>
+        <div className="absolute bottom-40 right-1/3 text-3xl animate-float opacity-35" style={{ color: '#D4B5A5', animationDelay: '0.5s' }}>🔮</div>
+        <div className="absolute top-1/3 right-10 text-2xl animate-float opacity-30" style={{ color: '#776650', animationDelay: '1.5s' }}>📜</div>
+        <div className="absolute bottom-20 left-20 text-xl animate-float opacity-40" style={{ color: '#C8A96B', animationDelay: '2.5s' }}>💫</div>
+      </div>
+
+      <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-12">
+        {/* Aria-live region for keyboard selections */}
+        <div
+          ref={ariaLiveRef}
+          aria-live="polite"
+          aria-atomic="true"
+          className="sr-only"
+        />
+      
+        {/* Header */}
+        <div className="text-center mb-12 lg:mb-16 max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="relative"
+          >
+            {/* Beta Ribbon */}
+            <div className="absolute -top-8 -right-8 transform rotate-12">
+              <div className="bg-gradient-to-r from-rose-champagne to-imperial-gold text-white px-4 py-2 rounded-lg shadow-lg border-2 border-white">
+                <div className="flex items-center gap-2">
+                  <SparklesIcon className="w-4 h-4" />
+                  <span className="text-sm font-bold font-raleway">QUIZ ROYAL</span>
+                  <StarIcon className="w-4 h-4" />
+                </div>
               </div>
             </div>
+
+            {/* Decorative Frame */}
+            <div className="absolute -inset-4 border-4 border-dashed border-imperial-gold/40 rounded-lg transform rotate-1"></div>
             
-            {/* Tooltip */}
-            <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-royal-velvet text-royal-pearl text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-              {currentQuestion + 1} / {quizQuestions.length} completed
+            <h1 className="relative text-4xl lg:text-5xl font-playfair font-bold text-royal-purple mb-4">
+              Miroir, Miroir
+            </h1>
+            
+            {/* Vintage Underline */}
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <div className="h-px bg-gradient-to-r from-transparent via-imperial-gold to-transparent flex-1"></div>
+              <StarIcon className="text-imperial-gold w-5 h-5" />
+              <div className="h-px bg-gradient-to-r from-transparent via-imperial-gold to-transparent flex-1"></div>
             </div>
-          </div>
-        </div>
-        <p className="text-cabinet-aubergine/70 font-sans text-lg max-w-2xl mx-auto">
-          Découvrez votre archétype royal en 8 questions. Laissez votre intuition vous guider vers votre véritable essence.
-        </p>
-      </div>
+            
+            <p className="text-royal-purple/80 font-raleway text-lg max-w-2xl mx-auto">
+              Découvrez votre archétype royal en 8 questions. Laissez votre intuition vous guider vers votre véritable essence.
+            </p>
+          </motion.div>
 
-      {/* Progress Bar */}
-      <div className="max-w-xl mx-auto mb-12 lg:mb-16">
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-royal-purple font-sans font-medium">
-            Question {currentQuestion + 1} / {quizQuestions.length}
-          </span>
-          <span className="text-cabinet-aubergine/70 font-sans text-sm">
-            {Math.round(((currentQuestion + 1) / quizQuestions.length) * 100)}% complété
-          </span>
-        </div>
-        <div className="w-full bg-royal-champagne/20 rounded-full h-3">
+          {/* Progress Bar */}
           <motion.div
-            className="bg-gradient-to-r from-royal-gold to-royal-champagne h-3 rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: `${((currentQuestion + 1) / quizQuestions.length) * 100}%` }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-          />
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="max-w-xl mx-auto mt-8"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-royal-purple font-raleway font-medium">
+                Question {currentQuestion + 1} / {quizQuestions.length}
+              </span>
+              <span className="text-royal-purple/70 font-raleway text-sm">
+                {Math.round(((currentQuestion + 1) / quizQuestions.length) * 100)}% complété
+              </span>
+            </div>
+            <div className="w-full bg-imperial-gold/20 rounded-full h-3">
+              <motion.div
+                className="bg-gradient-to-r from-imperial-gold to-smoky-gold h-3 rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${((currentQuestion + 1) / quizQuestions.length) * 100}%` }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+              />
+            </div>
+          </motion.div>
         </div>
-      </div>
 
-      {/* Question */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentQuestion}
-          initial={{ opacity: 0, x: 50 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -50 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-4xl mx-auto"
-        >
-          <div className="bg-gradient-to-r from-[#F5E6E9] to-[#FDF7F2] rounded-2xl p-8 border border-royal-gold/20 mb-8">
-            <h2 id="question-title" className="text-2xl font-serif font-bold text-royal-purple text-center mb-8">
-              {quizQuestions[currentQuestion].question}
-            </h2>
+        {/* Question */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentQuestion}
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            transition={{ duration: 0.5 }}
+            className="max-w-6xl mx-auto"
+          >
+            {/* Question Title */}
+            <div className="text-center mb-12">
+              <h2 id="question-title" className="text-2xl md:text-3xl font-playfair font-bold text-royal-purple">
+                {quizQuestions[currentQuestion].question}
+              </h2>
+            </div>
 
-            {/* Options Grid */}
+            {/* Options as handwritten notes */}
             <div 
-              className="grid grid-cols-2 lg:grid-cols-4 gap-8"
+              className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12"
               role="radiogroup"
               aria-labelledby="question-title"
             >
               {quizQuestions[currentQuestion].options.map((option, index) => {
                 const isSelected = selectedAnswer === option.id;
-                const iconMap: { [key: string]: string } = {
-                  'HeartIcon': '/assets/quiz-icons/heart.svg',
-                  'SparklesIcon': '/assets/quiz-icons/sparkles.svg',
-                  'SunIcon': '/assets/quiz-icons/sun.svg',
-                  'MoonIcon': '/assets/quiz-icons/moon.svg',
-                  'FireIcon': '/assets/quiz-icons/fire.svg',
-                  'BeakerIcon': '/assets/quiz-icons/beaker.svg',
-                  'EyeIcon': '/assets/quiz-icons/eye.svg',
-                  'ShieldCheckIcon': '/assets/quiz-icons/shield.svg'
-                };
+                const noteStyle = noteStyles[index % noteStyles.length];
                 
                 return (
-                  <Tilt
+                  <motion.div
                     key={option.id}
-                    tiltEnable={!prefersReducedMotion}
-                    tiltMaxAngleX={3}
-                    tiltMaxAngleY={3}
-                    perspective={1000}
+                    className={`quiz-note-option relative ${index === currentQuestion ? 'z-20' : 'z-10'}`}
+                    initial={{ opacity: 0, y: 50, rotateX: -15 }}
+                    animate={{ 
+                      opacity: 1,
+                      y: 0,
+                      rotateX: 0,
+                      scale: isSelected ? 1.05 : 1
+                    }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
                   >
-                    <motion.button
-                      className={`quiz-option-card relative p-6 rounded-2xl transition-all duration-300 border group ${
-                        isSelected
-                          ? 'bg-gradient-to-br from-[#F9ECEF] to-[#FDF7F2] border-royal-gold text-royal-purple shadow-inner-soft'
-                          : 'bg-gradient-to-br from-[#F5E6E9] to-[#FDF7F2] border-royal-gold/30 text-cabinet-aubergine hover:border-royal-gold/60 hover:bg-gradient-to-br hover:from-[#F9ECEF] hover:to-[#FDF7F2]'
-                      } ${!prefersReducedMotion ? 'hover:quiz-option-sparkle' : ''}`}
+                    {/* Handwritten Note */}
+                    <button
                       onClick={() => handleAnswerSelect(option.id)}
-                      whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                      className={`w-full bg-gradient-to-br ${noteStyle.color} p-6 md:p-8 rounded-lg shadow-xl border-2 ${noteStyle.borderColor} ${noteStyle.rotation} relative h-full flex flex-col items-center justify-center cursor-pointer hover:shadow-2xl transition-all duration-300 ${
+                        isSelected ? 'ring-2 ring-imperial-gold ring-opacity-50' : ''
+                      }`}
                       role="radio"
                       aria-checked={isSelected}
                       aria-labelledby={`option-${option.id}`}
                     >
-                      {/* Keyboard number indicator - Gold tab */}
-                      <div className="absolute -top-2 -left-2 w-6 h-6 bg-royal-gold rounded-full flex items-center justify-center shadow-soft">
-                        <span className="text-royal-purple font-sans font-bold text-xs">
+                      {/* Paper Holes */}
+                      <div className="absolute left-4 top-6 w-3 h-3 bg-warm-pearl rounded-full border border-patina-gold/50"></div>
+                      <div className="absolute left-4 top-12 w-3 h-3 bg-warm-pearl rounded-full border border-patina-gold/50"></div>
+                      <div className="absolute left-4 top-18 w-3 h-3 bg-warm-pearl rounded-full border border-patina-gold/50"></div>
+
+                      {/* Lines like notebook paper */}
+                      <div className="absolute inset-6 opacity-10">
+                        {[...Array(4)].map((_, i) => (
+                          <div key={i} className="h-px bg-patina-gold mb-6"></div>
+                        ))}
+                      </div>
+
+                      {/* Keyboard number indicator */}
+                      <div className="absolute -top-2 -left-2 w-6 h-6 bg-imperial-gold rounded-full flex items-center justify-center shadow-lg">
+                        <span className="text-royal-purple font-raleway font-bold text-xs">
                           {index + 1}
                         </span>
                       </div>
 
-                      <div className="flex flex-col items-center space-y-4">
-                        <div className={`p-4 rounded-full transition-all duration-300 ${
-                          isSelected 
-                            ? 'bg-royal-gold/20 backdrop-blur-sm' 
-                            : 'bg-white/30 backdrop-blur-sm group-hover:bg-royal-gold/10'
-                        }`}>
-                          <img 
-                            src={iconMap[option.icon.name] || '/assets/quiz-icons/heart.svg'} 
-                            alt=""
-                            className="w-8 h-8"
-                          />
-                        </div>
-                        <span 
-                          id={`option-${option.id}`}
-                          className={`font-sans font-medium transition-colors text-center leading-tight ${
-                            isSelected ? 'text-royal-purple' : 'text-cabinet-aubergine'
-                          }`}
-                        >
-                          {option.text}
-                        </span>
-                      </div>
-                      
+                      {/* Selection indicator */}
                       {isSelected && (
                         <motion.div
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-royal-gold rounded-full flex items-center justify-center shadow-soft"
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-imperial-gold rounded-full flex items-center justify-center shadow-lg"
                         >
                           <div className="w-2 h-2 bg-royal-purple rounded-full"></div>
                         </motion.div>
                       )}
-                    </motion.button>
-                  </Tilt>
+
+                      {/* Icon */}
+                      <div className="mb-4">
+                        <div className="w-12 h-12 bg-imperial-gold/20 rounded-full flex items-center justify-center">
+                          <option.icon className="w-6 h-6 text-royal-purple" />
+                        </div>
+                      </div>
+
+                      {/* Text */}
+                      <div 
+                        id={`option-${option.id}`}
+                        className="relative z-10 font-handwriting text-lg md:text-xl leading-relaxed text-velvet-black text-center" 
+                        style={{ fontFamily: 'Kalam, cursive' }}
+                      >
+                        {option.text}
+                      </div>
+                    </button>
+                  </motion.div>
                 );
               })}
             </div>
-          </div>
 
-          {/* Navigation */}
-          <div className="flex items-center justify-between max-w-xl mx-auto">
-            <button
-              onClick={handlePrevious}
-              disabled={currentQuestion === 0}
-              className="flex items-center space-x-2 px-6 py-3 rounded-full border border-royal-gold/30 text-cabinet-aubergine disabled:opacity-50 disabled:cursor-not-allowed hover:bg-royal-gold/10 transition-colors"
-            >
-              <ArrowLeftIcon className="w-5 h-5" />
-              <span className="font-sans">Précédent</span>
-            </button>
+            {/* Navigation */}
+            <div className="flex items-center justify-between max-w-xl mx-auto">
+              <button
+                onClick={handlePrevious}
+                disabled={currentQuestion === 0}
+                className="flex items-center space-x-2 px-6 py-3 rounded-full border border-imperial-gold/30 text-royal-purple disabled:opacity-50 disabled:cursor-not-allowed hover:bg-imperial-gold/10 transition-colors font-raleway"
+              >
+                <ArrowLeftIcon className="w-5 h-5" />
+                <span>Précédent</span>
+              </button>
 
-            <button
-              onClick={handleNext}
-              disabled={!selectedAnswer}
-              className="flex items-center space-x-2 px-6 py-3 rounded-full bg-gradient-to-r from-royal-gold/20 to-royal-champagne/20 border border-royal-gold/30 text-royal-purple font-sans font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:from-royal-gold/30 hover:to-royal-champagne/30 transition-all duration-200"
-            >
-              <span>
-                {currentQuestion === quizQuestions.length - 1 ? 'Voir résultat' : 'Suivant'}
-              </span>
-              <ArrowRightIcon className="w-5 h-5" />
-            </button>
-          </div>
-        </motion.div>
-      </AnimatePresence>
-    </motion.div>
+              <button
+                onClick={handleNext}
+                disabled={!selectedAnswer}
+                className="flex items-center space-x-2 px-6 py-3 rounded-full bg-gradient-to-r from-imperial-gold/20 to-rose-champagne/20 border border-imperial-gold/30 text-royal-purple font-raleway font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:from-imperial-gold/30 hover:to-rose-champagne/30 transition-all duration-200"
+              >
+                <span>
+                  {currentQuestion === quizQuestions.length - 1 ? 'Voir résultat' : 'Suivant'}
+                </span>
+                <ArrowRightIcon className="w-5 h-5" />
+              </button>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Add Kalam font for handwriting effect */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap');
+      `}</style>
+    </main>
   );
 };
 

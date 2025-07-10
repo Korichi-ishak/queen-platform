@@ -12,7 +12,7 @@ import RoyalShop from '../Modules/RoyalShop';
 import RoyalJournal from '../Modules/RoyalJournal';
 import CardsPage from '../Pages/CardsPage';
 import TarotQuiz from '../Modules/TarotQuiz';
-import RoyalTeaSalon from '../Modules/RoyalTeaSalon';
+import ChatPage from '../Pages/ChatPage';
 import GoldenParticles from '../Effects/GoldenParticles';
 import { CardsIcon, MirrorIcon, TeaIcon, BoutiqueIcon, JournalIcon, CrownIcon } from '../Icons/ArtDecoIcons';
 
@@ -154,7 +154,7 @@ const ClientDashboard = ({ onLogout, userEmail }: ClientDashboardProps) => {
         return <TarotQuiz />;
       
       case 'tea':
-        return <RoyalTeaSalon />;
+        return <ChatPage />;
       
       case 'shop':
         return <RoyalShop />;
@@ -178,7 +178,10 @@ const ClientDashboard = ({ onLogout, userEmail }: ClientDashboardProps) => {
       {/* Sidebar */}
       <div className="w-64 bg-gradient-cabinet shadow-royal hidden lg:block">
         <div className="p-6 border-b border-cabinet-patina/20">
-          <div className="flex items-center space-x-3">
+          <button 
+            onClick={() => setActiveSection('dashboard')}
+            className="flex items-center space-x-3 w-full text-left hover:bg-cabinet-patina/10 rounded-lg p-2 -m-2 transition-all duration-200"
+          >
             <div className="relative">
               <img 
                 src="/assets/images/logo-gold.webp" 
@@ -191,7 +194,7 @@ const ClientDashboard = ({ onLogout, userEmail }: ClientDashboardProps) => {
               <h1 className="text-lg font-title font-bold text-cabinet-powder">Mon Royaume</h1>
               <p className="text-xs text-cabinet-parchment font-body">Espace noble</p>
             </div>
-          </div>
+          </button>
         </div>
         
         <nav className="mt-6">

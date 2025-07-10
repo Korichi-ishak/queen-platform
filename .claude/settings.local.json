@@ -12,7 +12,17 @@
       "Bash(npm run dev:*)",
       "Bash(git add:*)",
       "Bash(mkdir:*)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(npx tsc:*)",
+      "Bash(timeout 10s npm run dev)"
     ],
     "deny": []
   }

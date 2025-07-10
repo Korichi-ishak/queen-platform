@@ -93,15 +93,19 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           {/* Header */}
           <div className="p-6 border-b border-royal-gold/20">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-royal-gold to-royal-champagne rounded-full flex items-center justify-center">
-                  <span className="text-royal-purple font-serif font-bold text-xl">Q</span>
+              <Link to="/" onClick={onClose} className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                <div className="w-10 h-10 flex items-center justify-center">
+                  <img 
+                    src="/assets/images/logo-gold.webp" 
+                    alt="Queen de Q" 
+                    className="h-8 w-auto drop-shadow-md"
+                  />
                 </div>
                 <div>
                   <h1 className="text-royal-pearl font-serif text-xl font-bold">Queen de Q</h1>
                   <p className="text-royal-champagne text-sm">Dashboard</p>
                 </div>
-              </div>
+              </Link>
               <button
                 onClick={onClose}
                 className="lg:hidden text-royal-pearl hover:text-royal-champagne transition-colors"

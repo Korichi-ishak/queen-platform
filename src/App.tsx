@@ -7,8 +7,9 @@ import CardsPage from './components/Pages/CardsPage';
 import QuizPage from './components/Pages/QuizPage';
 import JournalPage from './components/Pages/JournalPage';
 import ChatPage from './components/Pages/ChatPage';
+
 import ShopPage from './components/Pages/ShopPage';
-import TeaCeremonyPage from './components/Pages/TeaCeremonyPage';
+
 
 const AppContent = () => {
   const { user } = useAuth();
@@ -24,7 +25,8 @@ const AppContent = () => {
         <Route path="/cards" element={<CardsPage />} />
         <Route path="/quiz" element={<QuizPage />} />
         <Route path="/journal" element={<JournalPage />} />
-        <Route path="/chat" element={<TeaCeremonyPage />} />
+        <Route path="/chat" element={<ChatPage />} />
+        
         <Route path="/shop" element={<ShopPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
