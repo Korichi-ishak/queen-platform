@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { easeInOut } from 'framer-motion';
 import { 
   RectangleStackIcon, 
   ChatBubbleLeftRightIcon, 
@@ -69,7 +70,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     animate: { 
       x: isLargeScreen ? 0 : (isOpen ? 0 : -280)
     },
-    transition: { duration: 0.3, ease: "easeInOut" }
+    transition: { duration: 0.3, ease: easeInOut }
   };
 
   return (

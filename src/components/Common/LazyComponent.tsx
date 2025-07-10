@@ -1,4 +1,5 @@
-import { Component, ReactNode, ErrorInfo } from 'react';
+import { Component } from 'react';
+import type { ReactNode, ErrorInfo } from 'react';
 import { motion } from 'framer-motion';
 
 interface LazyComponentProps {
@@ -21,12 +22,12 @@ class LazyComponent extends Component<LazyComponentProps, LazyComponentState> {
     };
   }
 
-  static getDerivedStateFromError(error: Error): LazyComponentState {
+  static getDerivedStateFromError(): LazyComponentState {
     return { hasError: true, isLoading: false };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.warn('LazyComponent caught an error:', error, errorInfo);
+  componentDidCatch(_error: Error, errorInfo: ErrorInfo) {
+    console.warn('LazyComponent caught an error:', _error, errorInfo);
   }
 
   render() {
@@ -225,7 +226,7 @@ export const a11yUtils = {
   },
 
   // Color contrast checker (basic)
-  hasGoodContrast: (color1: string, color2: string): boolean => {
+  hasGoodContrast: (): boolean => {
     // This is a simplified version - in production, use a proper contrast checker
     // For now, we assume our design system colors have been tested
     return true;
