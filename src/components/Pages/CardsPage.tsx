@@ -7,7 +7,9 @@ import {
   FunnelIcon, 
   MagnifyingGlassIcon,
   ArrowPathIcon,
-  PlayIcon
+  PlayIcon,
+  BookOpenIcon,
+  ShareIcon
 } from '@heroicons/react/24/outline';
 import Tilt from 'react-parallax-tilt';
 import { Dialog, Transition } from '@headlessui/react';
@@ -776,7 +778,7 @@ const CardsPage = () => {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+            <div className="fixed inset-0 bg-royal-velvet/80 backdrop-blur-lg" />
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-y-auto">
@@ -790,70 +792,104 @@ const CardsPage = () => {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel ref={modalPanelRef} className="w-full max-w-md transform overflow-hidden rounded-2xl bg-[#F9F5EF] p-6 text-left align-middle shadow-royal transition-all">
+                <Dialog.Panel 
+                  ref={modalPanelRef}
+                  className="w-full max-w-lg transform overflow-hidden rounded-2xl bg-gradient-to-b from-royal-pearl/95 to-royal-champagne/95 p-8 text-left align-middle shadow-2xl transition-all border border-royal-gold/30"
+                >
                   {selectedCard && (
                     <>
-                      <motion.div layoutId={`card-${selectedCard.id}`}>
-                        <img
-                          src={selectedCard.image}
-                          alt={selectedCard.name}
-                          className="w-full h-auto max-h-[40vh] object-contain rounded-lg mx-auto sm:w-[220px] sm:h-[330px]"
-                        />
-                      </motion.div>
-                      <div className="mt-4">
-                        <Dialog.Title
-                          as="h3"
-                          className="text-2xl font-bold font-playfair leading-6 text-royal-purple text-center"
-                        >
-                          {selectedCard.name}
-                        </Dialog.Title>
-                        <div className="mt-2 text-center">
-                          <p className="text-sm text-cabinet-aubergine/80 font-sans italic">
-                            "{selectedCard.mirrorQuestion}"
-                          </p>
-                        </div>
-                        <div className="mt-4">
-                           <p className="text-base text-cabinet-aubergine font-sans text-center">
-                            {selectedCard.punchline}
-                          </p>
-                        </div>
+                      {/* Close button */}
+                      <button 
+                        onClick={handleCloseCard}
+                        className="absolute top-4 right-4 text-cabinet-aubergine/60 hover:text-royal-purple transition-colors z-10"
+                      >
+                        <XMarkIcon className="w-6 h-6" />
+                      </button>
 
-                        <div className="mt-4 flex flex-wrap justify-center gap-2">
+                      {/* Card Art */}
+                      <motion.div 
+                        className="w-64 h-96 mx-auto mb-8"
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0, transition: { delay: 0.1, duration: 0.4 } }}
+                      >
+                        <Tilt
+                          tiltEnable={!prefersReducedMotion}
+                          glareEnable={true}
+                          glareMaxOpacity={0.1}
+                          glarePosition="all"
+                        >
+                          <img 
+                            src={selectedCard.image} 
+                            alt={selectedCard.name}
+                            className="w-full h-full object-cover rounded-2xl shadow-lg"
+                          />
+                        </Tilt>
+                      </motion.div>
+                      
+                      {/* Card Info */}
+                      <motion.div
+                        className="text-center"
+                        initial="hidden"
+                        animate="visible"
+                        variants={{
+                          visible: {
+                            transition: {
+                              staggerChildren: 0.1,
+                              delayChildren: 0.2,
+                            },
+                          },
+                        }}
+                      >
+                        <motion.h3 variants={{hidden: {opacity:0, y:10}, visible:{opacity:1, y:0}}} className="text-3xl font-playfair font-bold text-royal-purple leading-tight">
+                          {selectedCard.name}
+                        </motion.h3>
+                        
+                        <motion.p variants={{hidden: {opacity:0, y:10}, visible:{opacity:1, y:0}}} className="font-sans italic text-cabinet-aubergine/80 mt-2 mb-4 text-lg">
+                          "{selectedCard.mirrorQuestion}"
+                        </motion.p>
+
+                        <motion.p variants={{hidden: {opacity:0, y:10}, visible:{opacity:1, y:0}}} className="text-cabinet-aubergine font-sans mb-6 text-base max-w-md mx-auto">
+                          {selectedCard.punchline}
+                        </motion.p>
+                        
+                        <motion.div variants={{hidden: {opacity:0, y:10}, visible:{opacity:1, y:0}}} className="flex justify-center flex-wrap gap-2 mb-8">
                           {selectedCard.keywords.map((keyword) => (
-                            <span key={keyword} className="bg-royal-gold/20 text-royal-purple text-xs font-medium px-2.5 py-1 rounded-full">
+                            <span
+                              key={keyword}
+                              className="px-4 py-1.5 rounded-full text-xs font-sans border transition-all duration-200 bg-royal-gold/10 border-royal-gold/30 text-royal-purple hover:bg-royal-gold/20"
+                            >
                               {keyword}
                             </span>
                           ))}
-                        </div>
-                      </div>
+                        </motion.div>
 
-                      <div className="mt-6 flex flex-col sm:flex-row gap-4">
-                        <button
-                          type="button"
-                          className="inline-flex w-full justify-center rounded-md border border-transparent bg-royal-gold px-4 py-2 text-sm font-medium text-royal-purple hover:bg-royal-gold/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-royal-gold focus-visible:ring-offset-2"
-                          onClick={() => handleAddToJournal(selectedCard)}
-                        >
-                          Ajouter au Journal / Add to Journal
-                        </button>
-                        <button
-                          type="button"
-                          disabled={isSharing}
-                          className="inline-flex w-full justify-center rounded-md border border-royal-gold bg-transparent px-4 py-2 text-sm font-medium text-royal-purple hover:bg-royal-gold/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-royal-gold focus-visible:ring-offset-2 disabled:opacity-50"
-                          onClick={() => handleSharePNG(selectedCard)}
-                        >
-                          {isSharing ? <ArrowPathIcon className="w-5 h-5 animate-spin mr-2" /> : null}
-                          Partager (PNG) / Share (PNG)
-                        </button>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
-                        onClick={handleCloseCard}
-                      >
-                        <span className="sr-only">Close</span>
-                        <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-                      </button>
+                        <motion.div variants={{hidden: {opacity:0, y:10}, visible:{opacity:1, y:0}}} className="flex flex-col sm:flex-row justify-center gap-4">
+                          <button
+                            onClick={() => handleAddToJournal(selectedCard)}
+                            className="w-full sm:w-auto flex-grow inline-flex items-center justify-center gap-3 text-center bg-gradient-to-r from-ritual-smokedGold to-ritual-vintage border border-ritual-smokedGold/50 rounded-lg px-6 py-3 text-royal-purple font-sans font-semibold hover:from-ritual-smokedGold/80 hover:to-ritual-vintage/80 transition-all duration-200 shadow-md"
+                          >
+                            <BookOpenIcon className="w-5 h-5" />
+                            <span>Ajouter au Journal</span>
+                          </button>
+                          <button
+                            onClick={() => handleSharePNG(selectedCard)}
+                            disabled={isSharing}
+                            className="w-full sm:w-auto flex-grow inline-flex items-center justify-center gap-3 text-center bg-transparent border border-ritual-smokedGold/50 rounded-lg px-6 py-3 text-royal-purple font-sans font-medium hover:bg-ritual-smokedGold/20 transition-all duration-200 disabled:opacity-60"
+                          >
+                            {isSharing ? (
+                              <>
+                                <ArrowPathIcon className="w-5 h-5 animate-spin" />
+                                <span>Partage...</span>
+                              </>
+                            ) : (
+                              <>
+                                <ShareIcon className="w-5 h-5" />
+                                <span>Partager (PNG)</span>
+                              </>
+                            )}
+                          </button>
+                        </motion.div>
+                      </motion.div>
                     </>
                   )}
                 </Dialog.Panel>

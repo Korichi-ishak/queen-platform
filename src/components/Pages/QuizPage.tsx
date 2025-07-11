@@ -12,7 +12,9 @@ import {
   ShieldCheckIcon,
   ArrowRightIcon,
   ArrowLeftIcon,
-  StarIcon
+  StarIcon,
+  ShareIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
 
 // Lazy load confetti
@@ -146,6 +148,99 @@ const queenResults: { [key: string]: QuizResult } = {
   }
 };
 
+const QuizResultDisplay = ({ 
+  result, 
+  onRestart,
+  onShare,
+  prefersReducedMotion 
+}: { 
+  result: QuizResult; 
+  onRestart: () => void;
+  onShare: (result: QuizResult) => void;
+  prefersReducedMotion: boolean;
+}) => {
+
+  useEffect(() => {
+    if (!prefersReducedMotion) {
+      const triggerConfetti = async () => {
+        try {
+          const confetti = (await loadConfetti()).default;
+          confetti({
+            particleCount: 150,
+            spread: 90,
+            origin: { y: 0.6 },
+            colors: ['#D6AE60', '#D4B5A5', '#3B1E50', '#B79D74', '#FFFFFF']
+          });
+        } catch (e) {
+          console.warn('Failed to load confetti');
+        }
+      };
+      triggerConfetti();
+    }
+  }, [prefersReducedMotion]);
+
+  return (
+    <motion.div 
+      className={`relative w-full max-w-4xl mx-auto bg-gradient-to-br ${result.color} p-8 md:p-12 rounded-3xl shadow-2xl overflow-hidden border-4 border-white/50`}
+      initial={{ opacity: 0, scale: 0.9, y: 50 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ duration: 0.7, ease: 'easeOut' }}
+    >
+      <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
+        <motion.div 
+          className="w-48 h-48 md:w-64 md:h-64 flex-shrink-0"
+          initial={{ opacity: 0, scale: 0.5, rotate: -15 }}
+          animate={{ opacity: 1, scale: 1, rotate: 0, transition: { delay: 0.2, type: 'spring', stiffness: 100 } }}
+        >
+          <img 
+            src={result.portrait} 
+            alt={`Portrait de ${result.name}`}
+            className="w-full h-full object-contain filter drop-shadow-lg"
+          />
+        </motion.div>
+        
+        <div className="text-center md:text-left">
+          <motion.h2 
+            className="text-4xl md:text-5xl font-serif font-bold text-royal-purple leading-tight"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0, transition: { delay: 0.4, duration: 0.5 } }}
+          >
+            {result.name}
+          </motion.h2>
+          <motion.p 
+            className="mt-4 text-lg text-cabinet-aubergine font-sans max-w-prose"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0, transition: { delay: 0.6, duration: 0.5 } }}
+          >
+            {result.description}
+          </motion.p>
+        </div>
+      </div>
+      
+      <motion.div 
+        className="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0, transition: { delay: 0.8, duration: 0.5 } }}
+      >
+        <button
+          onClick={() => onShare(result)}
+          className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-white/40 text-royal-purple font-semibold rounded-full shadow-md hover:bg-white/60 transition-all transform hover:scale-105"
+        >
+          <ShareIcon className="w-5 h-5" />
+          <span>Partager mon résultat</span>
+        </button>
+        <button
+          onClick={onRestart}
+          className="inline-flex items-center justify-center gap-2 px-8 py-3 text-royal-purple font-medium rounded-full hover:bg-white/20 transition-colors"
+        >
+          <ArrowPathIcon className="w-5 h-5" />
+          <span>Refaire le quiz</span>
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+};
+
 const QuizPage = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
@@ -233,26 +328,33 @@ const QuizPage = () => {
     } else {
       // Calculate result
       const archetypes: { [key: string]: number } = {};
-      Object.values(newAnswers).forEach(answer => {
-        const question = quizQuestions[Object.keys(newAnswers).indexOf(answer)];
-        const option = question.options.find(opt => opt.id === answer);
-        if (option) {
+      const validArchetypes = Object.keys(queenResults);
+
+      Object.entries(newAnswers).forEach(([questionIndex, answerId]) => {
+        const question = quizQuestions[parseInt(questionIndex, 10)];
+        const option = question.options.find(opt => opt.id === answerId);
+        
+        // Only count archetypes that have a corresponding result defined
+        if (option && validArchetypes.includes(option.archetype)) {
           archetypes[option.archetype] = (archetypes[option.archetype] || 0) + 1;
         }
       });
 
-      const topArchetype = Object.keys(archetypes).reduce((a, b) => 
-        archetypes[a] > archetypes[b] ? a : b
-      );
+      const topArchetype = Object.keys(archetypes).length > 0
+        ? Object.keys(archetypes).reduce((a, b) => archetypes[a] > archetypes[b] ? a : b)
+        : validArchetypes[0]; // Default to the first valid archetype
 
       setResult(queenResults[topArchetype]);
       setShowResult(true);
 
-      // Track event (placeholder for Plausible)
-      if (typeof window !== 'undefined' && (window as unknown as { plausible?: Function }).plausible) {
-        (window as unknown as { plausible: Function }).plausible('quiz_finished', {
-          props: { result: topArchetype }
-        });
+      if (!confettiTriggered) {
+        // Track event (placeholder for Plausible)
+        if (typeof window !== 'undefined' && (window as unknown as { plausible?: Function }).plausible) {
+          (window as unknown as { plausible: Function }).plausible('quiz_finished', {
+            props: { result: topArchetype }
+          });
+        }
+        setConfettiTriggered(true);
       }
     }
   };
@@ -273,197 +375,39 @@ const QuizPage = () => {
     setConfettiTriggered(false);
   };
 
-  const handleShareResult = async (result: QuizResult) => {
+  const handleShareResult = async (resultToShare: QuizResult) => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `Quiz Royal - ${result.name}`,
-          text: `Je suis ${result.name}! Découvrez votre archétype royal avec le Quiz Royal de Queen de Q.`,
+          title: `Quiz Royal - ${resultToShare.name}`,
+          text: `Je suis ${resultToShare.name}! Découvrez votre archétype royal avec le Quiz Royal de Queen de Q.`,
           url: window.location.href
         });
       } catch (error) {
         console.log('Error sharing:', error);
       }
     } else {
-      const text = `Je suis ${result.name}! Découvrez votre archétype royal avec le Quiz Royal de Queen de Q. ${window.location.href}`;
+      const text = `Je suis ${resultToShare.name}! Découvrez votre archétype royal avec le Quiz Royal de Queen de Q. ${window.location.href}`;
       navigator.clipboard.writeText(text);
       alert('Résultat copié dans le presse-papiers!');
     }
   };
 
-  // Trigger confetti when result screen mounts
-  useEffect(() => {
-    if (showResult && !confettiTriggered && !prefersReducedMotion) {
-      setConfettiTriggered(true);
-      
-      setTimeout(async () => {
-        try {
-          const confettiModule = await loadConfetti();
-          const confetti = confettiModule.default;
-          confetti({
-            particleCount: 60,
-            spread: 60,
-            origin: { y: 0.7 },
-            colors: ['#D6AE60', '#D4B5A5', '#3B1E50', '#C8A96B'],
-            ticks: 200
-          });
-        } catch {
-          // Silently fail if confetti can't be loaded
-        }
-      }, 300);
-    }
-  }, [showResult, confettiTriggered, prefersReducedMotion]);
-
   if (showResult && result) {
     return (
-      <main className="min-h-screen relative overflow-hidden">
-        {/* Vintage Paper Texture Background */}
-        <div className="absolute inset-0 opacity-30" 
-             style={{
-               backgroundImage: `
-                 radial-gradient(circle at 20% 80%, rgba(75, 46, 67, 0.1) 0%, transparent 50%),
-                 radial-gradient(circle at 80% 20%, rgba(214, 174, 96, 0.1) 0%, transparent 50%),
-                 radial-gradient(circle at 40% 40%, rgba(212, 181, 165, 0.1) 0%, transparent 50%)
-               `
-             }}>
-        </div>
-
-        {/* Floating elements */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-20 left-10 text-4xl animate-float opacity-30" style={{ color: '#776650' }}>👑</div>
-          <div className="absolute top-40 right-20 text-3xl animate-float opacity-40" style={{ color: '#C8A96B', animationDelay: '1s' }}>✨</div>
-          <div className="absolute top-60 left-1/4 text-2xl animate-float opacity-25" style={{ color: '#B79D74', animationDelay: '2s' }}>🌟</div>
-          <div className="absolute bottom-40 right-1/3 text-3xl animate-float opacity-35" style={{ color: '#D4B5A5', animationDelay: '0.5s' }}>🔮</div>
-          <div className="absolute top-1/3 right-10 text-2xl animate-float opacity-30" style={{ color: '#776650', animationDelay: '1.5s' }}>📜</div>
-          <div className="absolute bottom-20 left-20 text-xl animate-float opacity-40" style={{ color: '#C8A96B', animationDelay: '2.5s' }}>💫</div>
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="relative z-10 flex flex-col items-center justify-center min-h-screen text-center px-4 py-12"
-        >
-          <div className={`bg-gradient-to-br ${result.color} rounded-3xl p-12 shadow-royal border border-imperial-gold/30 max-w-3xl mx-auto mb-8 relative`}>
-            {/* Decorative corners */}
-            <div className="absolute -top-2 -left-2 w-4 h-4 border-l-2 border-t-2 border-imperial-gold"></div>
-            <div className="absolute -top-2 -right-2 w-4 h-4 border-r-2 border-t-2 border-imperial-gold"></div>
-            <div className="absolute -bottom-2 -left-2 w-4 h-4 border-l-2 border-b-2 border-imperial-gold"></div>
-            <div className="absolute -bottom-2 -right-2 w-4 h-4 border-l-2 border-b-2 border-imperial-gold"></div>
-
-            {/* Paper holes */}
-            <div className="absolute left-6 top-8 w-3 h-3 bg-warm-pearl rounded-full border border-patina-gold/50"></div>
-            <div className="absolute left-6 top-16 w-3 h-3 bg-warm-pearl rounded-full border border-patina-gold/50"></div>
-            <div className="absolute left-6 top-24 w-3 h-3 bg-warm-pearl rounded-full border border-patina-gold/50"></div>
-
-            {/* Large Queen archetype illustration */}
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.6, type: "spring" }}
-              className="mb-8"
-            >
-              <div className="w-48 h-48 mx-auto mb-6 flex items-center justify-center">
-                <img 
-                  src={result.portrait} 
-                  alt={result.name}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            </motion.div>
-            
-            {/* Headline */}
-            <motion.h1
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="text-4xl lg:text-5xl font-playfair font-bold text-royal-purple mb-6"
-            >
-              Vous êtes {result.name}
-            </motion.h1>
-
-            {/* Crown icon with bounce animation */}
-            <motion.div
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="flex justify-center mb-8"
-            >
-              <motion.div
-                animate={prefersReducedMotion ? {} : {
-                  y: [0, -10, 0],
-                  scale: [1, 1.1, 1]
-                }}
-                transition={{
-                  duration: 0.6,
-                  delay: 0.6,
-                  ease: "easeOut"
-                }}
-                className="w-12 h-12 bg-imperial-gold/20 rounded-full flex items-center justify-center"
-              >
-                <StarIcon className="w-6 h-6 text-royal-purple" />
-              </motion.div>
-            </motion.div>
-            
-            {/* Description */}
-            <motion.div
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="mb-8"
-            >
-              <p className="text-royal-purple/90 font-raleway text-lg leading-relaxed max-w-2xl mx-auto">
-                {result.description}
-              </p>
-            </motion.div>
-
-            {/* Mirror affirmation */}
-            <motion.div
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className="mb-8"
-            >
-              <p className="text-imperial-gold font-handwriting text-lg italic" style={{ fontFamily: 'Kalam, cursive' }}>
-                "Vous portez en vous la force et la beauté de votre archétype royal."
-              </p>
-            </motion.div>
-            
-            {/* CTA Buttons */}
-            <motion.div
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.7 }}
-              className="flex flex-wrap gap-4 justify-center"
-            >
-              <button
-                onClick={() => handleShareResult(result)}
-                className="bg-gradient-to-r from-imperial-gold/20 to-rose-champagne/20 border border-imperial-gold/30 rounded-full px-8 py-3 text-royal-purple font-raleway font-medium hover:from-imperial-gold/30 hover:to-rose-champagne/30 transition-all duration-200"
-              >
-                Partager mon résultat
-              </button>
-              <button
-                onClick={() => window.location.href = '/cards'}
-                className="bg-gradient-to-r from-royal-purple/20 to-vintage-aubergine/20 border border-royal-purple/30 rounded-full px-8 py-3 text-royal-purple font-raleway font-medium hover:from-royal-purple/30 hover:to-vintage-aubergine/30 transition-all duration-200"
-              >
-                Explorer vos cartes
-              </button>
-              <button
-                onClick={handleRestart}
-                className="bg-gradient-to-r from-vintage-aubergine/20 to-royal-purple/20 border border-vintage-aubergine/30 rounded-full px-8 py-3 text-vintage-aubergine font-raleway font-medium hover:from-vintage-aubergine/30 hover:to-royal-purple/30 transition-all duration-200"
-              >
-                Recommencer
-              </button>
-            </motion.div>
-          </div>
-        </motion.div>
-
-        {/* Add Kalam font for handwriting effect */}
-        <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap');
-        `}</style>
-      </main>
+      <div className="min-h-screen bg-gradient-to-br from-royal-pearl to-rose-champagne flex items-center justify-center p-4">
+        <QuizResultDisplay 
+          result={result} 
+          onRestart={handleRestart}
+          onShare={handleShareResult}
+          prefersReducedMotion={prefersReducedMotion}
+        />
+      </div>
     );
   }
+
+  const progress = (currentQuestion / quizQuestions.length) * 100;
+  const currentQ = quizQuestions[currentQuestion];
 
   return (
     <main className="min-h-screen relative overflow-hidden">
@@ -574,7 +518,7 @@ const QuizPage = () => {
             {/* Question Title */}
             <div className="text-center mb-12">
               <h2 id="question-title" className="text-2xl md:text-3xl font-playfair font-bold text-royal-purple">
-                {quizQuestions[currentQuestion].question}
+                {currentQ.question}
               </h2>
             </div>
 
@@ -584,7 +528,7 @@ const QuizPage = () => {
               role="radiogroup"
               aria-labelledby="question-title"
             >
-              {quizQuestions[currentQuestion].options.map((option, index) => {
+              {currentQ.options.map((option, index) => {
                 const isSelected = selectedAnswer === option.id;
                 const noteStyle = noteStyles[index % noteStyles.length];
                 
