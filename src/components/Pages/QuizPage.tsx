@@ -406,11 +406,10 @@ const QuizPage = () => {
     );
   }
 
-  const progress = (currentQuestion / quizQuestions.length) * 100;
   const currentQ = quizQuestions[currentQuestion];
 
   return (
-    <main className="min-h-screen relative overflow-hidden">
+    <main className="min-h-screen bg-gradient-to-br from-royal-pearl to-rose-champagne flex flex-col items-center justify-center p-4">
       {/* Vintage Paper Texture Background */}
       <div className="absolute inset-0 opacity-30" 
            style={{
