@@ -348,11 +348,6 @@ const CardsPage = () => {
     
     // Mark spread cards as opened
     randomCards.forEach(card => markCardOpened(card.id));
-    
-    setTimeout(() => {
-      setSpreadMode(false);
-      setSpreadCards([]);
-    }, 5000);
   };
 
   // Progress calculation
@@ -590,51 +585,89 @@ const CardsPage = () => {
       </AnimatePresence>
 
       {/* 3-Card Spread Mode */}
-      <AnimatePresence>
+      <AnimatePresence onExitComplete={() => setSpreadCards([])}>
         {spreadMode && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-royal-velvet/70 z-40 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-royal-velvet/90 backdrop-blur-md z-40 flex flex-col items-center justify-center p-4"
           >
             <div className="text-center">
-              <h2 className="text-3xl font-serif font-bold text-royal-pearl mb-8">
+              <motion.h2 
+                className="text-3xl md:text-4xl font-serif font-bold text-royal-pearl mb-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0, transition: { delay: 0.5, duration: 0.5 } }}
+              >
                 Your 3-Card Spread / Votre Tirage 3 Cartes
-              </h2>
-              <div className="flex justify-center space-x-8">
+              </motion.h2>
+              <motion.p 
+                className="text-royal-pearl/80 font-sans text-lg mb-10"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0, transition: { delay: 0.7, duration: 0.5 } }}
+              >
+                Méditation sur ces trois archétypes...
+              </motion.p>
+
+              <div className="flex justify-center items-center space-x-[-4rem] md:space-x-[-6rem]">
                 {spreadCards.map((card, index) => (
                   <motion.div
                     key={card.id}
-                    initial={{ opacity: 0, rotateY: 180, x: 0 }}
-                    animate={{ 
-                      opacity: 1, 
-                      rotateY: 0, 
-                      x: (index - 1) * 20,
-                      rotate: (index - 1) * 15
+                    initial={{ opacity: 0, y: -100, scale: 0.5, rotate: 0 }}
+                    animate={{
+                      opacity: 1,
+                      y: index === 1 ? -20 : 0,
+                      scale: 1,
+                      rotate: (index - 1) * 15,
+                      x: (index - 1) * 30,
+                      transition: {
+                        type: 'spring',
+                        stiffness: 80,
+                        damping: 12,
+                        delay: 0.8 + index * 0.15,
+                      },
                     }}
-                    transition={{ duration: 0.8, delay: index * 0.2 }}
-                    className="w-32 h-48"
+                    exit={{ opacity: 0, y: 50, transition: { duration: 0.2 } }}
+                    whileHover={{
+                      scale: 1.1,
+                      y: -35,
+                      zIndex: 100,
+                      rotate: 0,
+                      boxShadow: '0px 15px 30px rgba(0, 0, 0, 0.5)',
+                    }}
+                    className="w-48 h-72 relative cursor-pointer"
+                    style={{ zIndex: spreadCards.length - Math.abs(index - 1) }}
+                    onClick={() => handleCardClick(card)}
                   >
-                    <div className={`w-full h-full rounded-xl bg-gradient-to-br ${card.color} border-2 border-royal-gold shadow-golden overflow-hidden`}>
-                      <img 
-                        src={card.image} 
-                        alt={card.name}
-                        className="w-full h-full object-cover opacity-80"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-royal-velvet/80 via-transparent to-transparent"></div>
-                      <div className="absolute bottom-2 left-2 right-2">
-                        <h3 className="text-royal-pearl font-serif font-bold text-sm leading-tight">
-                          {card.name}
-                        </h3>
+                    <Tilt
+                      tiltEnable={!prefersReducedMotion}
+                      tiltMaxAngleX={8}
+                      tiltMaxAngleY={8}
+                      glareEnable={true}
+                      glareMaxOpacity={0.15}
+                      glarePosition="all"
+                      className="w-full h-full"
+                    >
+                      <div className={`w-full h-full rounded-2xl bg-gradient-to-br ${card.color} border-2 border-royal-gold/70 shadow-golden-strong overflow-hidden`}>
+                        <img 
+                          src={card.image} 
+                          alt={card.name}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                    </div>
+                    </Tilt>
                   </motion.div>
                 ))}
               </div>
-              <p className="text-royal-pearl/80 font-sans text-lg mt-8">
-                Méditation sur ces trois archétypes...
-              </p>
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1, transition: { delay: 1.5, duration: 0.5 } }}
+                onClick={() => setSpreadMode(false)} 
+                className="mt-12 text-royal-pearl/80 hover:text-white transition-colors flex items-center gap-2 mx-auto bg-white/10 hover:bg-white/20 px-6 py-2 rounded-full"
+              >
+                <XMarkIcon className="w-5 h-5" />
+                <span>Fermer</span>
+              </motion.button>
             </div>
           </motion.div>
         )}
